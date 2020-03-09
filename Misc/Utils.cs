@@ -1,0 +1,391 @@
+﻿using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+
+namespace TinyOPDSCore
+{
+    public static class StringExtension
+    {
+        /// <summary>
+        /// Capitalize words in the string (for example, author's name: first, middle last), by converting first char of every word to uppercase
+        /// </summary>
+        /// <param name="str">source string</param>
+        /// <param name="onlyFirstWord">capitalize first word only</param>
+        /// <returns></returns>
+        public static string Capitalize(this string str, bool onlyFirstWord = false)
+        {
+            string[] words = str.Split(' ');
+            str = string.Empty;
+            for (int i = 0; i < words.Length; i++)
+            {
+                if (!onlyFirstWord || (onlyFirstWord && i == 0))
+                {
+                    if (words[i].Length > 1)
+                    {
+                        if (words[i].IsUpper()) words[i] = words[i].ToLower();
+                        words[i] = char.ToUpper(words[i][0]) + words[i].Substring(1);
+                    }
+                    else
+                    {
+                        words[i] = words[i].ToUpper();
+                    }
+                }
+                str += words[i] + " ";
+            }
+            return str.Trim();
+        }
+
+        public static bool IsUpper(this string str)
+        {
+            bool isUpper = true;
+            foreach (char c in str) isUpper &= char.IsUpper(c);
+            return isUpper;
+        }
+    }
+
+    public class Utils
+    {
+        private static string[] fb2Clients = new string[] { "fbreader", "moon+ reader" };
+        /// <summary>
+        /// Detect eBook readers with fb2 support
+        /// </summary>
+        /// <param name="userAgent"></param>
+        /// <returns>true if reader supports fb2 format</returns>
+        public static bool DetectFB2Reader(string userAgent)
+        {
+            if (!string.IsNullOrEmpty(userAgent))
+            {
+                foreach (string s in fb2Clients)
+                {
+                    if (userAgent.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+                }
+            }
+            return false;
+        }
+
+        private static string[] browsers = new string[] { "opera", "aol", "msie", "firefox", "chrome", "mozilla", "safari", "netscape", "navigator", "mosaic", "lynx",
+                                                          "amaya", "omniweb", "avant", "camino", "flock", "seamonkey", "konqueror", "gecko", "yandex.browser" };
+        /// <summary>
+        /// Detect browsers by User-Agent
+        /// </summary>
+        /// <param name="userAgent"></param>
+        /// <returns>true if it's browser request</returns>
+        public static bool DetectBrowser(string userAgent)
+        {
+            if (!string.IsNullOrEmpty(userAgent))
+            {
+                foreach (string s in browsers)
+                {
+                    if (userAgent.IndexOf(s, StringComparison.OrdinalIgnoreCase) >= 0) return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Helper for project Mono
+        /// </summary>
+        public static bool IsLinux
+        {
+            get
+            {
+                int p = (int)Environment.OSVersion.Platform;
+                return (p == 4) || (p == 6) || (p == 128);
+            }
+        }
+
+        // Default path to service files: databases, log, setting
+        public static string ServiceFilesLocation
+        {
+            get
+            {
+                //return Properties.Settings.Default.ServiceFilesPath;
+                return Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            }
+        }
+
+        // Assembly version
+        public static Version Version
+        {
+            get
+            {
+                return System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            }
+        }
+
+        public static string ServerVersionName
+        {
+            get
+            {
+                return string.Format("running on TinyOPDS server version {0}.{1}", Version.Major, Version.Minor);
+            }
+        }
+
+        /// <summary>
+        /// Creates a name-based UUID using the algorithm from RFC 4122 §4.3.
+        /// </summary>
+        /// <param name="namespaceId">The ID of the namespace.</param>
+        /// <param name="name">The name (within that namespace).</param>
+        /// <param name="version">The version number of the UUID to create; this value must be either
+        /// <returns>A UUID derived from the namespace and name.</returns>
+        public static Guid CreateGuid(Guid namespaceId, string name)
+        {
+            if (name == null) throw new ArgumentNullException("name");
+            // convert the name to a sequence of octets (as defined by the standard or conventions of its namespace) (step 3)
+            // ASSUME: UTF-8 encoding is always appropriate
+            byte[] nameBytes = Encoding.UTF8.GetBytes(name);
+
+            // convert the namespace UUID to network order (step 3)
+            byte[] namespaceBytes = namespaceId.ToByteArray();
+            SwapByteOrder(namespaceBytes);
+
+            // compute the hash of the name space ID concatenated with the name (step 4)
+            byte[] hash = namespaceId.ToByteArray();
+            using (SHA256 algorithm = new SHA256Managed())
+            {
+                algorithm.TransformBlock(namespaceBytes, 0, namespaceBytes.Length, hash, 0);
+                algorithm.TransformFinalBlock(nameBytes, 0, nameBytes.Length);
+                hash = algorithm.Hash;
+            }
+
+            // most bytes from the hash are copied straight to the bytes of the new GUID (steps 5-7, 9, 11-12)
+            byte[] newGuid = new byte[16];
+            Array.Copy(hash, 0, newGuid, 0, 16);
+
+            // set the four most significant bits (bits 12 through 15) of the time_hi_and_version field to the appropriate 4-bit version number from Section 4.1.3 (step 8)
+            newGuid[6] = (byte)((newGuid[6] & 0x0F) | (5 << 4));
+
+            // set the two most significant bits (bits 6 and 7) of the clock_seq_hi_and_reserved to zero and one, respectively (step 10)
+            newGuid[8] = (byte)((newGuid[8] & 0x3F) | 0x80);
+
+            // convert the resulting UUID to local byte order (step 13)
+            SwapByteOrder(newGuid);
+            return new Guid(newGuid);
+        }
+
+        /// <summary>
+        /// The namespace for fully-qualified domain names (from RFC 4122, Appendix C).
+        /// </summary>
+        public static readonly Guid DnsNamespace = new Guid("6ba7b810-9dad-11d1-80b4-00c04fd430c8");
+
+        /// <summary>
+        /// The namespace for URLs (from RFC 4122, Appendix C).
+        /// </summary>
+        public static readonly Guid UrlNamespace = new Guid("6ba7b811-9dad-11d1-80b4-00c04fd430c8");
+
+        /// <summary>
+        /// The namespace for ISO OIDs (from RFC 4122, Appendix C).
+        /// </summary>
+        public static readonly Guid IsoOidNamespace = new Guid("6ba7b812-9dad-11d1-80b4-00c04fd430c8");
+
+        // Converts a GUID (expressed as a byte array) to/from network order (MSB-first).
+        internal static void SwapByteOrder(byte[] guid)
+        {
+            SwapBytes(guid, 0, 3);
+            SwapBytes(guid, 1, 2);
+            SwapBytes(guid, 4, 5);
+            SwapBytes(guid, 6, 7);
+        }
+
+        private static void SwapBytes(byte[] guid, int left, int right)
+        {
+            byte temp = guid[left];
+            guid[left] = guid[right];
+            guid[right] = temp;
+        }
+
+    }
+
+    /// <summary>
+    /// Gives us a handy way to modify a collection while we're iterating through it.
+    /// 
+    /// </summary>
+    /// Example of usage:
+    /// foreach (Book book in new IteratorIsolateCollection(Library.Books.Values))
+    /// {
+    ///     book.Title = book.Title.ToUpper();
+    /// }
+    public class IteratorIsolateCollection : IEnumerable
+    {
+        IEnumerable _enumerable;
+
+        public IteratorIsolateCollection(IEnumerable enumerable)
+        {
+            _enumerable = enumerable;
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            return new IteratorIsolateEnumerator(_enumerable.GetEnumerator());
+        }
+
+        internal class IteratorIsolateEnumerator : IEnumerator
+        {
+            ArrayList items = new ArrayList();
+            int currentItem;
+
+            internal IteratorIsolateEnumerator(IEnumerator enumerator)
+            {
+                while (enumerator.MoveNext() != false)
+                {
+                    items.Add(enumerator.Current);
+                }
+                IDisposable disposable = enumerator as IDisposable;
+                if (disposable != null)
+                {
+                    disposable.Dispose();
+                }
+                currentItem = -1;
+            }
+
+            public void Reset()
+            {
+                currentItem = -1;
+            }
+
+            public bool MoveNext()
+            {
+                currentItem++;
+                if (currentItem == items.Count)
+                    return false;
+
+                return true;
+            }
+
+            public object Current
+            {
+                get
+                {
+                    return items[currentItem];
+                }
+            }
+        }
+    }
+
+    public static class Properties
+    {
+        public static IConfiguration config;
+        public static string LibraryPath
+        {
+            get => config["LibraryPath"];
+        }
+        public static string ServerName
+        {
+            get => config["ServerName"];
+        }
+        public static int ServerPort
+        {
+            get => Int32.TryParse(config["ServerPort"], out int result) ? result : 8080;
+                
+        }
+        public static bool StartWithWindows
+        {
+            get => Boolean.TryParse(config["ServerPort"], out bool result) ? result : false;
+        }
+
+        public static bool StartMinimized
+        {
+            get => Boolean.TryParse(config["StartMinimized"], out bool result) ? result : false;
+        }
+
+        public static bool CloseToTray
+        {
+            get => Boolean.TryParse(config["CloseToTray"], out bool result) ? result : true;
+        }
+        public static string ConvertorPath
+        {
+            get => config["ConvertorPath"];
+        }
+        public static string Language
+        {
+            get => config["Language"] ?? "en";
+        }
+        public static bool OpenNATPort
+        {
+            get => Boolean.TryParse(config["OpenNATPort"], out bool result) ? result : false;
+        }
+        public static string ServiceFilesPath
+        {
+            get => config["ServiceFilesPath"];
+        }
+        public static bool SaveLogToDisk
+        {
+            get => Boolean.TryParse(config["SaveLogToDisk"], out bool result) ? result : true;
+        }
+        public static string RootPrefix
+        {
+            get => config["RootPrefix"];
+        }
+        public static bool WatchLibrary
+        {
+            get => Boolean.TryParse(config["WatchLibrary"], out bool result) ? result : false;
+        }
+        public static bool UseUPnP
+        {
+            get => Boolean.TryParse(config["UseUPnP"], out bool result) ? result : true;
+        }
+        public static bool UseHTTPAuth
+        {
+            get => Boolean.TryParse(config["UseHTTPAuth"], out bool result) ? result : false;
+        }
+        public static string Credentials
+        {
+            get => config["Credentials"];
+        }
+        public static bool BanClients
+        {
+            get => Boolean.TryParse(config["BanClients"], out bool result) ? result : false;
+        }
+        public static int LogLevel
+        {
+            get => Int32.TryParse(config["LogLevel"], out int result) ? result : 0;
+        }
+        public static bool RememberClients
+        {
+            get => Boolean.TryParse(config["RememberClients"], out bool result) ? result : false;
+        }
+        public static int UpdatesCheck
+        {
+            get => Int32.TryParse(config["UpdatesCheck"], out int result) ? result : 0;
+        }
+        public static DateTime? LastCheck
+        {
+            get
+            {
+                try
+                {
+                    string t = config["LastCheck"];
+                    return new DateTime(Int32.Parse(t.Substring(0, 4)), Int32.Parse(t.Substring(5, 2)), Int32.Parse(t.Substring(8, 2)));
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+        }
+        public static int WrongAttemptsCount
+        {
+            get => Int32.TryParse(config["WrongAttemptsCount"], out int result) ? result : 5;
+        }
+        public static int LocalInterfaceIndex
+        {
+            get => Int32.TryParse(config["LocalInterfaceIndex"], out int result) ? result : 0;
+        }
+        public static bool UseAbsoluteUri
+        {
+            get => Boolean.TryParse(config["UseAbsoluteUri"], out bool result) ? result : false;
+        }
+        public static int LibraryKind
+        {
+            get => Int32.TryParse(config["LibraryKind"], out int result) ? result : 0;
+        }
+        public static string MyHomeLibraryPath
+        {
+            get => config["MyHomeLibraryPath"];
+        }
+    }
+}
