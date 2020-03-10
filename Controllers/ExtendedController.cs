@@ -20,15 +20,17 @@ namespace TinyOPDSCore.Controllers
         [HttpGet("/")]
         public IActionResult index()
         {
-            string xml = getHeader();
-            xml += new RootCatalog().Catalog.ToString();
+            string xml = new RootCatalog().Catalog.ToString();
+            xml = getHeader(xml);
+            
             return OPDSResult(xml);
         }
 
         [HttpGet("/authorsindex/{name?}")]
         public IActionResult authorsindex(string name)
         {
-            string xml = getHeader();
+            string xml = new AuthorsCatalog().GetCatalog(name ?? "").ToString();
+            xml = getHeader(xml);
             xml += new AuthorsCatalog().GetCatalog(name ?? "").ToString();
             return OPDSResult(xml);
         }
@@ -36,48 +38,54 @@ namespace TinyOPDSCore.Controllers
         [HttpGet("/author/{name?}")]
         public IActionResult author(string name)
         {
-            string xml = getHeader();
-            xml += new BooksCatalog().GetCatalogByAuthor(name ?? "", acceptFB2()).ToString();
+            string xml = new BooksCatalog().GetCatalogByAuthor(name ?? "", acceptFB2()).ToString();
+            xml = getHeader(xml);
+            
             return OPDSResult(xml);
         }
 
         [HttpGet("/sequencesindex/{name?}")]
         public IActionResult sequencesindex(string name)
         {
-            string xml = getHeader();
-            xml += new SequencesCatalog().GetCatalog(name ?? "").ToString();
+            string xml = new SequencesCatalog().GetCatalog(name ?? "").ToString();
+            xml = getHeader(xml);
+            
             return OPDSResult(xml);
         }
 
         [HttpGet("/sequence/{name?}")]
         public IActionResult sequence(string name)
         {
-            string xml = getHeader();
-            xml += new BooksCatalog().GetCatalogBySequence(name ?? "", acceptFB2()).ToString();
+            string xml = new BooksCatalog().GetCatalogBySequence(name ?? "", acceptFB2()).ToString();
+            xml = getHeader(xml);
+            
             return OPDSResult(xml);
         }
 
         [HttpGet("/genres/{name?}")]
         public IActionResult genres(string name)
         {
-            string xml = getHeader();
-            xml += new GenresCatalog().GetCatalog(name ?? "").ToString();
+            string xml = new GenresCatalog().GetCatalog(name ?? "").ToString();
+            xml = getHeader(xml);
+            
             return OPDSResult(xml);
         }
 
         [HttpGet("/genre/{name?}")]
         public IActionResult genre(string name)
         {
-            string xml = getHeader();
-            xml += new BooksCatalog().GetCatalogByGenre(name ?? "", acceptFB2()).ToString();
+            string xml = new BooksCatalog().GetCatalogByGenre(name ?? "", acceptFB2()).ToString();
+            xml = getHeader(xml);
+            
             return OPDSResult(xml);
         }
 
         [HttpGet("/search")]
         public IActionResult search(string searchTerm, string searchType, int? pageNumber)
         {
-            string xml = getHeader();
-            xml += new OpenSearch().Search(searchTerm ?? "", searchType ?? "", acceptFB2(), pageNumber ?? 0).ToString();
+            string xml = new OpenSearch().Search(searchTerm ?? "", searchType ?? "", acceptFB2(), pageNumber ?? 0).ToString();
+            xml = getHeader(xml);
+            
             return OPDSResult(xml);
         }
 
@@ -192,17 +200,17 @@ namespace TinyOPDSCore.Controllers
             return Content(xml, MediaTypeHeaderValue.Parse("application/atom+xml;charset=utf-8"));
         }
 
-        private string getHeader()
+        private string getHeader(string xml0)
         {
             string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
-            xml = xml.Insert(5, " xmlns=\"http://www.w3.org/2005/Atom\"");
+            xml = xml + xml0.Insert(5, " xmlns=\"http://www.w3.org/2005/Atom\"");
             return absoluteUri(xml);
         }
 
         private string getOpensearchHeader()
         {
-            string xml = new OpenSearch().OpenSearchDescription().ToString();
-            xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + xml.Insert(22, " xmlns=\"http://a9.com/-/spec/opensearch/1.1/\"");
+            string xml0 = new OpenSearch().OpenSearchDescription().ToString();
+            string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + xml0.Insert(22, " xmlns=\"http://a9.com/-/spec/opensearch/1.1/\"");
             return absoluteUri(xml);
         }
 

@@ -20,7 +20,7 @@ namespace TinyOPDSCore
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
-                    webBuilder.UseStartup<Startup>();
+                    webBuilder.UseStartup<Startup>().UseUrls("http://*:63395;http://*:5000");
                 });
     }
 }
