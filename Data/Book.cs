@@ -23,9 +23,10 @@ namespace TinyOPDSCore.Data
         {
             Version = 1;
             FileName = fileName;
-            if (!string.IsNullOrEmpty(FileName) && FileName.IndexOf(LibraryFactory.GetLibrary().LibraryPath) == 0)
+            var lib = LibraryFactory.GetLibrary();
+            if (!string.IsNullOrEmpty(FileName) && FileName.IndexOf(lib.LibraryPath) == 0)
             {
-                FileName = FileName.Substring(LibraryFactory.GetLibrary().LibraryPath.Length + 1);
+                FileName = FileName.Substring(lib.LibraryPath.Length + 1);
             }
             Title = Sequence = Annotation = Language = string.Empty;
             HasCover = false;
