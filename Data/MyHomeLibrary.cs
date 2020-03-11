@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Data;
 using System.IO;
-using System.Data.SQLite;
+using SQLitePCL;
 
 namespace TinyOPDSCore.Data
 {
@@ -12,17 +12,25 @@ namespace TinyOPDSCore.Data
     {
         Object objectLock = new object();
         private string ConnectionString;
+        private sqlite3 db;
         public MyHomeLibrary()
         {
+            int rc;
             if (!String.IsNullOrWhiteSpace(Properties.MyHomeLibraryPath))
             {
-                ConnectionString = GetConnectionString();
+                raw.SetProvider(new SQLite3Provider_e_sqlite3());
+                string fname = DataBaseFile();
+                rc = raw.sqlite3_open(fname, out db);
+                if (rc != raw.SQLITE_OK)
+                {
+                    throw new Exception($"Ошибка открытия базы данных {fname}");
+                }
             }
         }
 
-        private string GetConnectionString()
+        private string DataBaseFile()
         {
-            var dir =  Properties.MyHomeLibraryPath;
+            var dir = Properties.MyHomeLibraryPath;
             var files = Directory.GetFiles(dir, "*.hlc2");
             var file = "";
             var minDate = DateTime.MinValue;
@@ -39,7 +47,12 @@ namespace TinyOPDSCore.Data
             {
                 throw new FileNotFoundException(String.Format("Файл БД в папке {0} не найден", dir));
             }
-            return "Data Source=" + file + ";Mode=ReadOnly";
+            return file;
+        }
+
+        private string GetConnectionString()
+        {
+            return "Data Source=" + DataBaseFile();
         }
         public string LibraryPath { get; set; } = Properties.MyHomeLibraryPath;
         public bool IsChanged { get; set; }
@@ -48,18 +61,26 @@ namespace TinyOPDSCore.Data
         {
             get
             {
-                using (var cn = new SQLiteConnection(ConnectionString))
+                sqlite3_stmt stmt = null;
+                try
                 {
-                    try
+                    int rc;
+                    rc = raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where IsDeleted=0", out stmt);
+                    if (rc != raw.SQLITE_OK)
                     {
-                        if (cn.State != ConnectionState.Open) cn.Open();
-                        var o = new SQLiteCommand("select count(BookID) from Books where IsDeleted=0", cn).ExecuteScalar();
-                        return (int)(long)o;
+                        throw new Exception("Ошибка базы данных");
                     }
-                    catch
+                    int count = 0;
+                    if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                     {
-                        return 0;
+
+                        count = raw.sqlite3_column_int(stmt, 0);
                     }
+                    return count;
+                }
+                finally
+                {
+                    raw.sqlite3_finalize(stmt);
                 }
             }
         }
@@ -68,17 +89,24 @@ namespace TinyOPDSCore.Data
         {
             get
             {
-                using (var cn = new SQLiteConnection(ConnectionString))
+                sqlite3_stmt stmt = null;
+                try
                 {
-                    try
+                    if (raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where SearchExt = '.FB2' and IsDeleted=0", out stmt) 
+                        != raw.SQLITE_OK)
                     {
-                        if (cn.State != ConnectionState.Open) cn.Open();
-                        return (int)(long)new SQLiteCommand("select count(BookID) from Books where SearchExt = '.FB2' and IsDeleted=0", cn).ExecuteScalar();
+                        throw new Exception("Ошибка базы данных");
                     }
-                    catch
+                    int count = 0;
+                    if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                     {
-                        return 0;
+                        count = raw.sqlite3_column_int(stmt, 0);
                     }
+                    return count;
+                }
+                finally
+                {
+                    raw.sqlite3_finalize(stmt);
                 }
             }
         }
@@ -87,17 +115,26 @@ namespace TinyOPDSCore.Data
         {
             get
             {
-                using (var cn = new SQLiteConnection(ConnectionString))
+                sqlite3_stmt stmt = null;
+                try
                 {
-                    try
+                    int rc;
+                    rc = raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where SearchExt = '.EPUB' and IsDeleted=0", out stmt);
+                    if (rc != raw.SQLITE_OK)
                     {
-                        if (cn.State != ConnectionState.Open) cn.Open();
-                        return (int)(long)new SQLiteCommand("select count(BookID) from Books where SearchExt = '.EPUB' and IsDeleted=0", cn).ExecuteScalar();
+                        throw new Exception("Ошибка базы данных");
                     }
-                    catch
+                    int count = 0;
+                    if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                     {
-                        return 0;
+
+                        count = raw.sqlite3_column_int(stmt, 0);
                     }
+                    return count;
+                }
+                finally
+                {
+                    raw.sqlite3_finalize(stmt);
                 }
             }
         }
@@ -110,16 +147,24 @@ namespace TinyOPDSCore.Data
                 if (_titles == null)
                 {
                     _titles = new List<string>();
-                    using (var cn = new SQLiteConnection(ConnectionString))
+                    sqlite3_stmt stmt = null;
+                    try
                     {
-                        if (cn.State != ConnectionState.Open) cn.Open();
-                        using (var dr = new SQLiteCommand("select distinct Title from Books order by Title and IsDeleted=0", cn).ExecuteReader())
+                        int rc;
+                        rc = raw.sqlite3_prepare_v2(db, "select distinct Title from Books order by Title and IsDeleted=0", out stmt);
+                        if (rc != raw.SQLITE_OK)
                         {
-                            while (dr.Read())
-                            {
-                                _titles.Add(dr[0].ToString());
-                            }
+                            throw new Exception("Ошибка базы данных");
                         }
+                        while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                        {
+                            var txt = raw.sqlite3_column_text(stmt, 0);
+                            _authors.Add(txt.utf8_to_string());
+                        }
+                    }
+                    finally
+                    {
+                        raw.sqlite3_finalize(stmt);
                     }
                 }
                 return _titles;
@@ -134,17 +179,24 @@ namespace TinyOPDSCore.Data
                 if (_authors == null)
                 {
                     _authors = new List<string>();
-                    using (var cn = new SQLiteConnection(ConnectionString))
+                    sqlite3_stmt stmt = null;
+                    try
                     {
-                        //if (cn.State != ConnectionState.Open) 
-                            cn.Open();
-                        using (var dr = new SQLiteCommand("select distinct SearchName from Authors order by SearchName", cn).ExecuteReader())
+                        int rc;
+                        rc = raw.sqlite3_prepare_v2(db, "select distinct SearchName from Authors order by SearchName", out stmt);
+                        if (rc != raw.SQLITE_OK)
                         {
-                            while (dr.Read())
-                            {
-                                _authors.Add(dr[0].ToString());
-                            }
+                            throw new Exception("Ошибка базы данных");
                         }
+                        while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                        {
+                            var txt = raw.sqlite3_column_text(stmt, 0);
+                            _authors.Add(txt.utf8_to_string());
+                        }
+                    }
+                    finally
+                    {
+                        raw.sqlite3_finalize(stmt);
                     }
                 }
                 return _authors;
@@ -159,16 +211,24 @@ namespace TinyOPDSCore.Data
                 if (_sequences == null)
                 {
                     _sequences = new List<string>();
-                    using (var cn = new SQLiteConnection(ConnectionString))
+                    sqlite3_stmt stmt = null;
+                    try
                     {
-                        if (cn.State != ConnectionState.Open) cn.Open();
-                        using (var dr = new SQLiteCommand("select distinct SearchSeriesTitle from Series order by SearchSeriesTitle", cn).ExecuteReader())
+                        int rc;
+                        rc = raw.sqlite3_prepare_v2(db, "select distinct SearchSeriesTitle from Series order by SearchSeriesTitle", out stmt);
+                        if (rc != raw.SQLITE_OK)
                         {
-                            while (dr.Read())
-                            {
-                                _sequences.Add(dr[0].ToString());
-                            }
+                            throw new Exception("Ошибка базы данных");
                         }
+                        while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                        {
+                            var txt = raw.sqlite3_column_text(stmt, 0);
+                            _authors.Add(txt.utf8_to_string());
+                        }
+                    }
+                    finally
+                    {
+                        raw.sqlite3_finalize(stmt);
                     }
                 }
                 return _sequences;
@@ -183,32 +243,40 @@ namespace TinyOPDSCore.Data
                 if (_genres == null)
                 {
                     _genres = new List<Genre>();
-                    using (var cn = new SQLiteConnection(ConnectionString))
+                    sqlite3_stmt stmt = null;
+                    if (raw.sqlite3_prepare_v2(db,
+                        "select GenreAlias, GenreCode from Genres where ParentCode = '0' order by GenreCode", out stmt) != raw.SQLITE_OK)
                     {
-                        if (cn.State != ConnectionState.Open) cn.Open();
-                        using (var dr = new SQLiteCommand("select * from Genres where ParentCode = '0' order by GenreCode", cn).ExecuteReader())
-                        {
-                            while (dr.Read())
-                            {
-                                var g = new Genre();
-                                g.Name = dr["GenreAlias"].ToString();
-                                g.Translation = dr["GenreAlias"].ToString();
-                                using (var dr1 = new SQLiteCommand("select * from Genres where ParentCode = '" +
-                                    dr["GenreCode"].ToString() + "' order by GenreCode", cn).ExecuteReader())
-                                {
-                                    while (dr1.Read())
-                                    {
-                                        var g1 = new Genre();
-                                        g1.Name = dr1["GenreAlias"].ToString();
-                                        g1.Translation = dr1["GenreAlias"].ToString();
-                                        g1.Tag = dr1["FB2Code"].ToString();
-                                        g.Subgenres.Add(g1);
-                                    }
-                                }
-                                _genres.Add(g);
-                            }
-                        }
+                        throw new Exception("Ошибка базы данных");
                     }
+                    while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                    {
+                        var genreAlias = raw.sqlite3_column_text(stmt, 0);
+                        var genreCode = raw.sqlite3_column_text(stmt, 1);
+                        var g = new Genre();
+                        g.Name = genreAlias.utf8_to_string();
+                        g.Translation = genreAlias.utf8_to_string();
+                        sqlite3_stmt stmt1;
+                        if (raw.sqlite3_prepare_v2(db,
+                            "select GenreAlias, FB2Code from Genres where ParentCode = '" +
+                                genreCode.utf8_to_string() + "' order by GenreCode", out stmt1) != raw.SQLITE_OK)
+                        {
+                            throw new Exception("Ошибка базы данных");
+                        }
+                        while (raw.sqlite3_step(stmt1) == raw.SQLITE_ROW)
+                        {
+                            var genreAlias1 = raw.sqlite3_column_text(stmt1, 0);
+                            var genreCode1 = raw.sqlite3_column_text(stmt1, 1);
+                            var g1 = new Genre();
+                            g1.Name = genreAlias1.utf8_to_string();
+                            g1.Translation = genreAlias1.utf8_to_string();
+                            g1.Tag = genreCode1.utf8_to_string();
+                            g.Subgenres.Add(g1);
+                        }
+                        raw.sqlite3_finalize(stmt1);
+                        _genres.Add(g);
+                    }
+                    raw.sqlite3_finalize(stmt);
                 }
                 return _genres;
             }
@@ -288,66 +356,81 @@ namespace TinyOPDSCore.Data
                 return _lst[id];
             else
             {
-                using (var cn = new SQLiteConnection(ConnectionString))
+                sqlite3_stmt stmt = null;
+                if (raw.sqlite3_prepare_v2(db,
+                    "select Folder, FileName, Ext, UpdateDate, Annotation, Title, Lang, SeriesID, SeqNumber, BookSize " + 
+                    "from Books b where Folder = ? and FileName = ? and IsDeleted=0", out stmt) != raw.SQLITE_OK)
                 {
-                    if (cn.State != ConnectionState.Open) cn.Open();
-                    var mas = id.Split('@');
-                    var mas1 = mas[1].Split('.');
-                    var cSql = "select * from Books b, (select a.SearchName from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where al.BookID = b.BookID collate NOCASE) Author, " +
-                        "(select g.GenreAlias from Genre_List gl inner join Genres g on gl.GenreCode = g.GenreCode where gl.BookID = b.BookID collate NOCASE) Genre " +
-                        "where Folder = @p1 and FileName = @p2 and IsDeleted=0";
-                    var cmd = new SQLiteCommand(cSql, cn);
-                    cmd.Parameters.Add("@p1", DbType.String, 400).Value = mas[0];
-                    cmd.Parameters.Add("@p2", DbType.String, 400).Value = mas1[0];
-                    using (var dr = cmd.ExecuteReader())
-                    {
-                        Book o = null;
-                        if (dr.Read())
-                        {
-                            o = CreateBook(dr);
-                            o.Authors.Add(dr["Author"].ToString());
-                            o.Genres.Add(dr["Genre"].ToString());
-                        }
-                        return o;
-                    }
+                    throw new Exception("Ошибка базы данных");
                 }
+                var mas = id.Split('@');
+                var mas1 = mas[1].Split('.');
+                raw.sqlite3_bind_text(stmt, 0, mas[0]);
+                raw.sqlite3_bind_text(stmt, 1, mas1[0]);
+                if (raw.sqlite3_step(stmt) != raw.SQLITE_DONE) throw new Exception("Ошибка базы данных");
+                Book o = null;
+                o = CreateBook(stmt);
+                //o.Authors.Add(dr["Author"].ToString());
+                //o.Genres.Add(dr["Genre"].ToString());
+                raw.sqlite3_finalize(stmt);
+                return o;
             }
         }
 
-        private Book CreateBook(SQLiteDataReader dr)
+        private Book CreateBook(sqlite3_stmt stmt)
         {
-            var id = dr["folder"].ToString() + "@" + dr["FileName"].ToString() + dr["ext"].ToString();
+            string folder = raw.sqlite3_column_text(stmt, 0).utf8_to_string();
+            string filename = raw.sqlite3_column_text(stmt, 1).utf8_to_string();
+            string ext = raw.sqlite3_column_text(stmt, 2).utf8_to_string();
+            string updatedate = raw.sqlite3_column_text(stmt, 3).utf8_to_string();
+            string annotation = raw.sqlite3_column_text(stmt, 4).utf8_to_string();
+            string title = raw.sqlite3_column_text(stmt, 5).utf8_to_string();
+            string lang = raw.sqlite3_column_text(stmt, 6).utf8_to_string();
+            int seriesid = raw.sqlite3_column_int(stmt, 7);
+            int seqnumber = raw.sqlite3_column_int(stmt, 8);
+            int booksize = raw.sqlite3_column_int(stmt, 9);
+            var id = folder + "@" + filename + ext;
             var o = new Book(id);
-            o.AddedDate = ConvertDate(dr["UpdateDate"].ToString());
-            o.Annotation = dr["Annotation"].ToString();
+            o.AddedDate = ConvertDate(updatedate);
+            o.Annotation = annotation;
             o.BookDate = DateTime.MinValue;
             o.ID = id;
-            o.Title = dr["Title"].ToString();
-            o.Language = dr["Lang"].ToString();
+            o.Title = title;
+            o.Language = lang;
             o.HasCover = false;
             o.DocumentDate = DateTime.MinValue;
-            if (!(dr["SeriesID"] is DBNull))
-                o.Sequence = dr["SeriesID"].ToString();
+            if (seriesid != 0)
+                o.Sequence = seriesid.ToString();
             else
                 o.Sequence = null;
-            if (!(dr["SeqNumber"] is DBNull))
-                o.NumberInSequence = (uint)(long)dr["SeqNumber"];
+            if (seqnumber != 0)
+                o.NumberInSequence = (uint)seqnumber;
             else
                 o.NumberInSequence = 0;
-            o.DocumentSize = (uint)(long)dr["BookSize"];
+            o.DocumentSize = (uint)booksize;
             return o;
         }
 
         public int GetBooksByAuthorCount(string author)
         {
-            using (var cn = new SQLiteConnection(ConnectionString))
+            sqlite3_stmt stmt = null;
+            try
             {
-                if (cn.State != ConnectionState.Open) cn.Open();
-                var cSql = "select count(*) from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where a.SearchName like @p1";
-                var cmd = new SQLiteCommand(cSql, cn);
-                cmd.Parameters.Add("@p1", DbType.String, 100).Value = author + "%";
-                var rt = (int)(long)cmd.ExecuteScalar();
-                return rt;
+                if (raw.sqlite3_prepare_v2(db, $"select count(*) from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where a.SearchName like '{author}%'", 
+                    out stmt) != raw.SQLITE_OK)
+                {
+                    throw new Exception("Ошибка базы данных");
+                }
+                int count = 0;
+                if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                {
+                    count = raw.sqlite3_column_int(stmt, 0);
+                }
+                return count;
+            }
+            finally
+            {
+                raw.sqlite3_finalize(stmt);
             }
         }
 
@@ -357,49 +440,54 @@ namespace TinyOPDSCore.Data
         {
             _lst.Clear();
             var lst = new List<Book>();
-            using (var cn = new SQLiteConnection(ConnectionString))
+            sqlite3_stmt stmt = null;
+            try
             {
-                if (cn.State != ConnectionState.Open) cn.Open();
-                var cSql = "select b.*, g.GenreAlias, a.SearchName from Author_List al inner join Authors a on al.AuthorID = a.AuthorID inner join Books b on al.BookID = b.BookID " +
+                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " + 
+                    "b.SeqNumber, b.BookSize, b.BookID, g.GenreAlias, a.SearchName " + 
+                    "from Author_List al inner join Authors a on al.AuthorID = a.AuthorID inner join Books b on al.BookID = b.BookID " +
                     "inner join Genre_List gl on b.BookID = gl.BookID inner join Genres g on gl.GenreCode = g.GenreCode " +
-                    "where a.SearchName like @p1 and b.IsDeleted = 0 order by b.BookID collate NOCASE";
-                var cmd = new SQLiteCommand(cSql, cn);
-                cmd.Parameters.Add("@p1", DbType.String, 512).Value = author + "%";
-                using (var dr = cmd.ExecuteReader())
+                    $"where a.SearchName like '{author}%' and b.IsDeleted = 0 order by b.BookID";
+                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) throw new Exception("Ошибка базы данных");
+                bool first = true;
+                long _bookid = 0;
+                Book o = null;
+                while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
-                    bool first = true;
-                    long _bookid = 0;
-                    Book o = null;
-                    while (dr.Read())
+                    var bookid = raw.sqlite3_column_int(stmt, 10);
+                    var searchname = raw.sqlite3_column_text(stmt, 12).utf8_to_string();
+                    var genrealias = raw.sqlite3_column_text(stmt, 11).utf8_to_string();
+                    if (_bookid != (long)bookid)
                     {
-                        if (_bookid != (long)dr["BookID"])
-                        {
-                            _bookid = (long)dr["BookID"];
-                            if (first) first = false;
-                            else
-                            {
-                                lst.Add(o);
-                                if (!_lst.ContainsKey(o.ID))
-                                    _lst.Add(o.ID, o);
-                            }
-                            o = CreateBook(dr);
-                            o.Authors.Add(dr["SearchName"].ToString());
-                            o.Genres.Add(dr["GenreAlias"].ToString());
-                        }
+                        _bookid = (long)bookid;
+                        if (first) first = false;
                         else
                         {
-                            o.Genres.Add(dr["GenreAlias"].ToString());
+                            lst.Add(o);
+                            if (!_lst.ContainsKey(o.ID))
+                                _lst.Add(o.ID, o);
                         }
+                        o = CreateBook(stmt);
+                        o.Authors.Add(searchname);
+                        o.Genres.Add(genrealias);
                     }
-                    if (o != null)
+                    else
                     {
-                        lst.Add(o);
-                        if (!_lst.ContainsKey(o.ID))
-                            _lst.Add(o.ID, o);
+                        o.Genres.Add(genrealias);
                     }
                 }
+                if (o != null)
+                {
+                    lst.Add(o);
+                    if (!_lst.ContainsKey(o.ID))
+                        _lst.Add(o.ID, o);
+                }
+                return lst;
             }
-            return lst;
+            finally
+            {
+                raw.sqlite3_finalize(stmt);
+            }
         }
 
         private DateTime ConvertDate(string s)
@@ -412,119 +500,90 @@ namespace TinyOPDSCore.Data
 
         public List<Book> GetBooksByGenre(string genre)
         {
-            _lst.Clear();
-            var lst = new List<Book>();
-            using (var cn = new SQLiteConnection(ConnectionString))
-            {
-                if (cn.State != ConnectionState.Open) cn.Open();
-                var cSql = "select b.*, g.GenreAlias, a.SearchName from Genre_List gl inner join Genres g on gl.GenreCode = g.GenreCode inner join Books b on gl.BookID = b.BookID " +
-                        "inner join Author_List al on b.BookID = al.BookID inner join Authors a on al.AuthorID = a.AuthorID " +
-                        "where g.FB2Code = @p1 and b.IsDeleted = 0 order by b.BookID";
-                var cmd = new SQLiteCommand(cSql, cn);
-                cmd.Parameters.Add("@p1", DbType.String, 20).Value = genre;
-                using (var dr = cmd.ExecuteReader())
-                {
-                    bool first = true;
-                    long _bookid = 0;
-                    Book o = null;
-                    while (dr.Read())
-                    {
-                        if (_bookid != (long)dr["BookID"])
-                        {
-                            _bookid = (long)dr["BookID"];
-                            if (first) first = false;
-                            else
-                            {
-                                lst.Add(o);
-                                if (!_lst.ContainsKey(o.ID))
-                                    _lst.Add(o.ID, o);
-                            }
-                            o = CreateBook(dr);
-                            o.Genres.Add(dr["GenreAlias"].ToString());
-                            o.Authors.Add(dr["SearchName"].ToString());
-                        }
-                        else
-                        {
-                            o.Authors.Add(dr["SearchName"].ToString());
-                        }
-                    }
-                    if (o != null)
-                    {
-                        lst.Add(o);
-                        if (!_lst.ContainsKey(o.ID))
-                            _lst.Add(o.ID, o);
-                    }
-                }
-            }
-            return lst;
+
+            return null;
         }
 
         public int GetBooksBySequenceCount(string sequence)
         {
-            using (var cn = new SQLiteConnection(ConnectionString))
+            sqlite3_stmt stmt = null;
+            try
             {
-                if (cn.State != ConnectionState.Open) cn.Open();
-                var cSql = "select count(*) from Books b inner join Series s on b.SeriesID = s.SeriesID where s.SearchSeriesTitle like @p1 and IsDeleted = 0 collate NOCASE";
-                var cmd = new SQLiteCommand(cSql, cn);
-                cmd.Parameters.Add("@p1", DbType.String, 80).Value = sequence;
-                return (int)(long)cmd.ExecuteScalar();
+                if (raw.sqlite3_prepare_v2(db, 
+                    $"select count(*) from Books b inner join Series s on b.SeriesID = s.SeriesID where s.SearchSeriesTitle like '{sequence}%' and IsDeleted = 0",
+                    out stmt) != raw.SQLITE_OK)
+                {
+                    throw new Exception("Ошибка базы данных");
+                }
+                int count = 0;
+                if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                {
+                    count = raw.sqlite3_column_int(stmt, 0);
+                }
+                return count;
+            }
+            finally
+            {
+                raw.sqlite3_finalize(stmt);
             }
         }
 
         public List<Book> GetBooksBySequence(string sequence)
         {
-            _lst.Clear();
-            var lst = new List<Book>();
-            using (var cn = new SQLiteConnection(ConnectionString))
-            {
-                if (cn.State != ConnectionState.Open) cn.Open();
-                var cSql = "select b.*, (select a.SearchName from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where al.BookID = b.BookID collate NOCASE) Author, " +
-                    "(select g.GenreAlias from Genre_List gl inner join Genres g on gl.GenreCode = g.GenreCode where gl.BookID = b.BookID collate NOCASE) Genre " +
-                    "from Books b inner join Series s on b.SeriesID = s.SeriesID where s.SearchSeriesTitle = @p1 and b.IsDeleted = 0 collate NOCASE";
-                var cmd = new SQLiteCommand(cSql, cn);
-                cmd.Parameters.Add("@p1", DbType.String, 80).Value = sequence;
-                using (var dr = cmd.ExecuteReader())
-                {
-                    while (dr.Read())
-                    {
-                        var o = CreateBook(dr);
-                        o.Authors.Add(dr["Author"].ToString());
-                        o.Genres.Add(dr["Genre"].ToString());
-                        lst.Add(o);
-                        if (!_lst.ContainsKey(o.ID))
-                            _lst.Add(o.ID, o);
-                    }
-                }
-            }
-            return lst;
+            //_lst.Clear();
+            //var lst = new List<Book>();
+            //using (var cn = new SQLiteConnection(ConnectionString))
+            //{
+            //    if (cn.State != ConnectionState.Open) cn.Open();
+            //    var cSql = "select b.*, (select a.SearchName from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where al.BookID = b.BookID collate NOCASE) Author, " +
+            //        "(select g.GenreAlias from Genre_List gl inner join Genres g on gl.GenreCode = g.GenreCode where gl.BookID = b.BookID collate NOCASE) Genre " +
+            //        "from Books b inner join Series s on b.SeriesID = s.SeriesID where s.SearchSeriesTitle = @p1 and b.IsDeleted = 0 collate NOCASE";
+            //    var cmd = new SQLiteCommand(cSql, cn);
+            //    cmd.Parameters.Add("@p1", SQLiteType.Text, 80).Value = sequence;
+            //    using (var dr = cmd.ExecuteReader())
+            //    {
+            //        while (dr.Read())
+            //        {
+            //            var o = CreateBook(dr);
+            //            o.Authors.Add(dr["Author"].ToString());
+            //            o.Genres.Add(dr["Genre"].ToString());
+            //            lst.Add(o);
+            //            if (!_lst.ContainsKey(o.ID))
+            //                _lst.Add(o.ID, o);
+            //        }
+            //    }
+            //}
+            //return lst;
+            return null;
         }
 
         public List<Book> GetBooksByTitle(string title)
         {
-            _lst.Clear();
-            var lst = new List<Book>();
-            using (var cn = new SQLiteConnection(ConnectionString))
-            {
-                if (cn.State != ConnectionState.Open) cn.Open();
-                var cSql = "select b.*, (select a.SearchName from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where al.BookID = b.BookID collate NOCASE) Author, " +
-                    "(select g.GenreAlias from Genre_List gl inner join Genres g on gl.GenreCode = g.GenreCode where gl.BookID = b.BookID collate NOCASE) Genre " +
-                    "from Books where b.SearchTitle like @p1 and b.IsDeleted = 0 collate NOCASE";
-                var cmd = new SQLiteCommand(cSql, cn);
-                cmd.Parameters.Add("@p1", DbType.String, 80).Value = "%" + title.ToUpper() + "%";
-                using (var dr = cmd.ExecuteReader())
-                {
-                    while (dr.Read())
-                    {
-                        var o = CreateBook(dr);
-                        o.Authors.Add(dr["Author"].ToString());
-                        o.Genres.Add(dr["Genre"].ToString());
-                        lst.Add(o);
-                        if (!_lst.ContainsKey(o.ID))
-                            _lst.Add(o.ID, o);
-                    }
-                }
-            }
-            return lst;
+            //_lst.Clear();
+            //var lst = new List<Book>();
+            //using (var cn = new SQLiteConnection(ConnectionString))
+            //{
+            //    if (cn.State != ConnectionState.Open) cn.Open();
+            //    var cSql = "select b.*, (select a.SearchName from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where al.BookID = b.BookID collate NOCASE) Author, " +
+            //        "(select g.GenreAlias from Genre_List gl inner join Genres g on gl.GenreCode = g.GenreCode where gl.BookID = b.BookID collate NOCASE) Genre " +
+            //        "from Books where b.SearchTitle like @p1 and b.IsDeleted = 0 collate NOCASE";
+            //    var cmd = new SQLiteCommand(cSql, cn);
+            //    cmd.Parameters.Add("@p1", SQLiteType.Text, 80).Value = "%" + title.ToUpper() + "%";
+            //    using (var dr = cmd.ExecuteReader())
+            //    {
+            //        while (dr.Read())
+            //        {
+            //            var o = CreateBook(dr);
+            //            o.Authors.Add(dr["Author"].ToString());
+            //            o.Genres.Add(dr["Genre"].ToString());
+            //            lst.Add(o);
+            //            if (!_lst.ContainsKey(o.ID))
+            //                _lst.Add(o.ID, o);
+            //        }
+            //    }
+            //}
+            //return lst;
+            return null;
         }
 
         public void Load()
