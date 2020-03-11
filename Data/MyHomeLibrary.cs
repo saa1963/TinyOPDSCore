@@ -416,7 +416,7 @@ namespace TinyOPDSCore.Data
             sqlite3_stmt stmt = null;
             try
             {
-                if (raw.sqlite3_prepare_v2(db, $"select count(*) from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where a.SearchName like {author}%", 
+                if (raw.sqlite3_prepare_v2(db, $"select count(*) from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where a.SearchName like '{author}%'", 
                     out stmt) != raw.SQLITE_OK)
                 {
                     throw new Exception("Ошибка базы данных");
@@ -447,7 +447,7 @@ namespace TinyOPDSCore.Data
                     "b.SeqNumber, b.BookSize, b.BookID, g.GenreAlias, a.SearchName " + 
                     "from Author_List al inner join Authors a on al.AuthorID = a.AuthorID inner join Books b on al.BookID = b.BookID " +
                     "inner join Genre_List gl on b.BookID = gl.BookID inner join Genres g on gl.GenreCode = g.GenreCode " +
-                    $"where a.SearchName like {author}% and b.IsDeleted = 0 order by b.BookID";
+                    $"where a.SearchName like '{author}%' and b.IsDeleted = 0 order by b.BookID";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) throw new Exception("Ошибка базы данных");
                 bool first = true;
                 long _bookid = 0;
@@ -506,15 +506,26 @@ namespace TinyOPDSCore.Data
 
         public int GetBooksBySequenceCount(string sequence)
         {
-            //using (var cn = new SQLiteConnection(ConnectionString))
-            //{
-            //    if (cn.State != ConnectionState.Open) cn.Open();
-            //    var cSql = "select count(*) from Books b inner join Series s on b.SeriesID = s.SeriesID where s.SearchSeriesTitle like @p1 and IsDeleted = 0 collate NOCASE";
-            //    var cmd = new SQLiteCommand(cSql, cn);
-            //    cmd.Parameters.Add("@p1", SQLiteType.Text, 80).Value = sequence;
-            //    return (int)(long)cmd.ExecuteScalar();
-            //}
-            return 0;
+            sqlite3_stmt stmt = null;
+            try
+            {
+                if (raw.sqlite3_prepare_v2(db, 
+                    $"select count(*) from Books b inner join Series s on b.SeriesID = s.SeriesID where s.SearchSeriesTitle like '{sequence}%' and IsDeleted = 0",
+                    out stmt) != raw.SQLITE_OK)
+                {
+                    throw new Exception("Ошибка базы данных");
+                }
+                int count = 0;
+                if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                {
+                    count = raw.sqlite3_column_int(stmt, 0);
+                }
+                return count;
+            }
+            finally
+            {
+                raw.sqlite3_finalize(stmt);
+            }
         }
 
         public List<Book> GetBooksBySequence(string sequence)
