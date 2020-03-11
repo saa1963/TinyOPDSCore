@@ -125,18 +125,17 @@ namespace TinyOPDSCore.Controllers
                 }
                 memStream.Position = 0;
 
-                using (var outputStream = new MemoryStream())
+                var outputStream = new MemoryStream();
+                using (ZipArchive zipArchive = new ZipArchive(outputStream, ZipArchiveMode.Create, true))
                 {
-                    using (ZipArchive zipArchive = new ZipArchive(outputStream, ZipArchiveMode.Create))
+                    var entry = zipArchive.CreateEntry(Transliteration.Front($"{book.Authors.First()}_{book.Title}.fb2"));
+                    using (var z = entry.Open())
                     {
-                        var entry = zipArchive.CreateEntry(Transliteration.Front($"{book.Authors.First()}_{book.Title}.fb2"));
-                        using (var z = entry.Open())
-                        {
-                            memStream.WriteTo(z);
-                        }
+                        memStream.WriteTo(z);
                     }
-                    return File(outputStream, "application/fb2+zip");
                 }
+                outputStream.Seek(0, SeekOrigin.Begin);
+                return File(outputStream, "application/fb2+zip", "11.zip");
             }
             //else if (fname.Contains(".jpeg"))
             //{

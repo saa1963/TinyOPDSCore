@@ -11,21 +11,55 @@ namespace TinyOPDSCore.Data
     public class MyHomeLibrary : ILibrary
     {
         Object objectLock = new object();
-        private string ConnectionString;
         private sqlite3 db;
         public MyHomeLibrary()
         {
+            LibraryPath = Properties.LibraryPath;
             int rc;
             if (!String.IsNullOrWhiteSpace(Properties.MyHomeLibraryPath))
             {
                 raw.SetProvider(new SQLite3Provider_e_sqlite3());
                 string fname = DataBaseFile();
                 rc = raw.sqlite3_open(fname, out db);
+                raw.sqlite3_create_collation(db, "MHL_SYSTEM", null, mhl_system_collation);
+                raw.sqlite3_create_collation(db, "MHL_SYSTEM_NOCASE", null, mhl_system_nocase_collation);
+                raw.sqlite3_create_function(db, "MHL_UPPER", 1, null, mhl_upper);
+                raw.sqlite3_create_function(db, "MHL_LOWER", 1, null, mhl_lower);
                 if (rc != raw.SQLITE_OK)
                 {
                     throw new Exception($"Ошибка открытия базы данных {fname}");
                 }
             }
+        }
+
+        private void mhl_lower(sqlite3_context ctx, object user_data, sqlite3_value[] args)
+        {
+            var s = raw.sqlite3_value_text(args[0]).utf8_to_string().ToLower();
+            raw.sqlite3_result_text(ctx, s);
+            throw new NotImplementedException();
+        }
+
+        private void mhl_upper(sqlite3_context ctx, object user_data, sqlite3_value[] args)
+        {
+            var s = raw.sqlite3_value_text(args[0]).utf8_to_string().ToUpper();
+            raw.sqlite3_result_text(ctx, s);
+            //procedure SystemUpperString(pCtx: TSQLite3Context; nArgs: Integer; Args: TSQLite3Value); cdecl;
+            //var
+            //  s: string;
+            //begin
+            //  s := SQLite3_Value_text16(Args ^);
+            //SQLite3_Result_Text16(pCtx, PWideChar(TCharacter.ToUpper(s)), -1, SQLITE_TRANSIENT);
+            //end;
+        }
+
+        private int mhl_system_nocase_collation(object user_data, string s1, string s2)
+        {
+            return String.Compare(s1, s2);
+        }
+
+        private int mhl_system_collation(object user_data, string s1, string s2)
+        {
+            return String.Compare(s1, s2);
         }
 
         private string DataBaseFile()
@@ -54,7 +88,7 @@ namespace TinyOPDSCore.Data
         {
             return "Data Source=" + DataBaseFile();
         }
-        public string LibraryPath { get; set; } = Properties.MyHomeLibraryPath;
+        public string LibraryPath { get; set; }
         public bool IsChanged { get; set; }
 
         public int Count
@@ -357,24 +391,49 @@ namespace TinyOPDSCore.Data
             else
             {
                 sqlite3_stmt stmt = null;
-                if (raw.sqlite3_prepare_v2(db,
-                    "select Folder, FileName, Ext, UpdateDate, Annotation, Title, Lang, SeriesID, SeqNumber, BookSize " + 
-                    "from Books b where Folder = ? and FileName = ? and IsDeleted=0", out stmt) != raw.SQLITE_OK)
+                int rc = raw.sqlite3_prepare_v2(db,
+                    "select Folder, FileName, Ext, UpdateDate, Annotation, Title, Lang, SeriesID, SeqNumber, BookSize, BookID " +
+                    "from Books b where Folder = ? and FileName = ? and IsDeleted=0", out stmt);
+                if (rc != raw.SQLITE_OK)
                 {
-                    throw new Exception("Ошибка базы данных");
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                 }
                 var mas = id.Split('@');
                 var mas1 = mas[1].Split('.');
-                raw.sqlite3_bind_text(stmt, 0, mas[0]);
-                raw.sqlite3_bind_text(stmt, 1, mas1[0]);
-                if (raw.sqlite3_step(stmt) != raw.SQLITE_DONE) throw new Exception("Ошибка базы данных");
+                raw.sqlite3_bind_text(stmt, 1, mas[0]);
+                raw.sqlite3_bind_text(stmt, 2, mas1[0]);
+                if (raw.sqlite3_step(stmt) != raw.SQLITE_ROW) throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                 Book o = null;
                 o = CreateBook(stmt);
-                //o.Authors.Add(dr["Author"].ToString());
+                int bookid = raw.sqlite3_column_int(stmt, 10);
+                o.Authors.AddRange(ThisBookAuthors(bookid));
                 //o.Genres.Add(dr["Genre"].ToString());
                 raw.sqlite3_finalize(stmt);
                 return o;
             }
+        }
+
+        private List<string> ThisBookAuthors(int bookid)
+        {
+            var rt = new List<string>();
+            sqlite3_stmt stmt = null;
+            int rc = raw.sqlite3_prepare_v2(db,
+                    "select a.LastName, a.FirstName, a.MiddleName from " +
+                    "Author_List al inner join Authors a on al.AuthorID = a.AuthorID where al.BookID = ?", out stmt);
+            if (rc != raw.SQLITE_OK)
+            {
+                throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+            }
+            raw.sqlite3_bind_int(stmt, 1, bookid);
+            while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+            {
+                var lastname = raw.sqlite3_column_text(stmt, 0).utf8_to_string() ?? "";
+                var firstname = raw.sqlite3_column_text(stmt, 0).utf8_to_string() ?? "";
+                var middlename = raw.sqlite3_column_text(stmt, 0).utf8_to_string() ?? "";
+                rt.Add(string.Concat(lastname, " ", firstname, " ", middlename).Replace("  ", " ").Capitalize());
+            }
+            raw.sqlite3_finalize(stmt);
+            return rt;
         }
 
         private Book CreateBook(sqlite3_stmt stmt)
@@ -389,6 +448,7 @@ namespace TinyOPDSCore.Data
             int seriesid = raw.sqlite3_column_int(stmt, 7);
             int seqnumber = raw.sqlite3_column_int(stmt, 8);
             int booksize = raw.sqlite3_column_int(stmt, 9);
+            
             var id = folder + "@" + filename + ext;
             var o = new Book(id);
             o.AddedDate = ConvertDate(updatedate);
