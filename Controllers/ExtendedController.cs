@@ -96,18 +96,15 @@ namespace TinyOPDSCore.Controllers
         //    return OPDSResult(xml);
         //}
 
-        [HttpGet("/{fname}")]
-        public IActionResult Fb2zip(string fname)
+        [HttpGet("/{fname1}/{fname2}")]
+        public IActionResult Fb2zip(string fname1, string fname2)
         {
-            if (fname.Contains("opds-opensearch.xml"))
-            {
-                string xml = getOpensearchHeader();
-                return OPDSResult(xml);
-            }
-            else if (fname.Contains(".fb2.zip"))
+            string fname = fname1 + "/" + fname2;
+            if (fname2.Contains(".fb2.zip"))
             {
                 MemoryStream memStream = null;
                 memStream = new MemoryStream();
+
                 Book book = LibraryFactory.GetLibrary().GetBook(fname);
 
                 if (book.FilePath.ToLower().Contains(".zip@"))
@@ -141,56 +138,56 @@ namespace TinyOPDSCore.Controllers
                     return File(outputStream, "application/fb2+zip");
                 }
             }
-            else if (fname.Contains(".jpeg"))
-            {
-                bool getCover = true;
-                string bookID = string.Empty;
-                var request = Request.Path.Value;
-                if (request.Contains("/cover/"))
-                {
-                    bookID = Path.GetFileNameWithoutExtension(request.Substring(request.IndexOf("/cover/") + 7));
-                }
-                else if (request.Contains("/thumbnail/"))
-                {
-                    bookID = Path.GetFileNameWithoutExtension(request.Substring(request.IndexOf("/thumbnail/") + 11));
-                    getCover = false;
-                }
+            //else if (fname.Contains(".jpeg"))
+            //{
+            //    bool getCover = true;
+            //    string bookID = string.Empty;
+            //    var request = Request.Path.Value;
+            //    if (request.Contains("/cover/"))
+            //    {
+            //        bookID = Path.GetFileNameWithoutExtension(request.Substring(request.IndexOf("/cover/") + 7));
+            //    }
+            //    else if (request.Contains("/thumbnail/"))
+            //    {
+            //        bookID = Path.GetFileNameWithoutExtension(request.Substring(request.IndexOf("/thumbnail/") + 11));
+            //        getCover = false;
+            //    }
 
-                if (!string.IsNullOrEmpty(bookID))
-                {
-                    CoverImage image = null;
-                    Book book = LibraryFactory.GetLibrary().GetBook(bookID);
+            //    if (!string.IsNullOrEmpty(bookID))
+            //    {
+            //        CoverImage image = null;
+            //        Book book = LibraryFactory.GetLibrary().GetBook(bookID);
 
-                    if (book != null)
-                    {
-                        if (ImagesCache.HasImage(bookID)) image = ImagesCache.GetImage(bookID);
-                        else
-                        {
-                            image = new CoverImage(book);
-                            if (image != null && image.HasImages) ImagesCache.Add(image);
-                        }
+            //        if (book != null)
+            //        {
+            //            if (ImagesCache.HasImage(bookID)) image = ImagesCache.GetImage(bookID);
+            //            else
+            //            {
+            //                image = new CoverImage(book);
+            //                if (image != null && image.HasImages) ImagesCache.Add(image);
+            //            }
 
-                        if (image != null && image.HasImages)
-                        {
-                            return File(getCover ? image.CoverImageStream : image.ThumbnailImageStream, "image/jpeg");
-                        }
-                    }
-                    return NoContent();
-                }
-                return NoContent();
-            }
-            else if (fname.Contains(".ico"))
-            {
-                var request = Request.Path.Value;
-                string icon = Path.GetFileName(request);
-                //Stream stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("TinyOPDSCore.Icons." + icon);
-                Stream stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("TinyOPDS");
-                if (stream != null && stream.Length > 0)
-                {
-                    return File(stream, "image/x-icon");
-                }
-                return NoContent();
-            }
+            //            if (image != null && image.HasImages)
+            //            {
+            //                return File(getCover ? image.CoverImageStream : image.ThumbnailImageStream, "image/jpeg");
+            //            }
+            //        }
+            //        return NoContent();
+            //    }
+            //    return NoContent();
+            //}
+            //else if (fname.Contains(".ico"))
+            //{
+            //    var request = Request.Path.Value;
+            //    string icon = Path.GetFileName(request);
+            //    //Stream stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("TinyOPDSCore.Icons." + icon);
+            //    Stream stream = System.Reflection.Assembly.GetExecutingAssembly().GetManifestResourceStream("TinyOPDS");
+            //    if (stream != null && stream.Length > 0)
+            //    {
+            //        return File(stream, "image/x-icon");
+            //    }
+            //    return NoContent();
+            //}
             else
                 return NoContent();
         }
