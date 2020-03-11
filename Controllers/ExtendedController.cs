@@ -22,7 +22,6 @@ namespace TinyOPDSCore.Controllers
         {
             string xml = new RootCatalog().Catalog.ToString();
             xml = getHeader(xml);
-            
             return OPDSResult(xml);
         }
 
@@ -31,7 +30,6 @@ namespace TinyOPDSCore.Controllers
         {
             string xml = new AuthorsCatalog().GetCatalog(name ?? "").ToString();
             xml = getHeader(xml);
-            xml += new AuthorsCatalog().GetCatalog(name ?? "").ToString();
             return OPDSResult(xml);
         }
 
@@ -40,7 +38,6 @@ namespace TinyOPDSCore.Controllers
         {
             string xml = new BooksCatalog().GetCatalogByAuthor(name ?? "", acceptFB2()).ToString();
             xml = getHeader(xml);
-            
             return OPDSResult(xml);
         }
 
@@ -49,7 +46,6 @@ namespace TinyOPDSCore.Controllers
         {
             string xml = new SequencesCatalog().GetCatalog(name ?? "").ToString();
             xml = getHeader(xml);
-            
             return OPDSResult(xml);
         }
 
@@ -58,7 +54,6 @@ namespace TinyOPDSCore.Controllers
         {
             string xml = new BooksCatalog().GetCatalogBySequence(name ?? "", acceptFB2()).ToString();
             xml = getHeader(xml);
-            
             return OPDSResult(xml);
         }
 
@@ -67,7 +62,6 @@ namespace TinyOPDSCore.Controllers
         {
             string xml = new GenresCatalog().GetCatalog(name ?? "").ToString();
             xml = getHeader(xml);
-            
             return OPDSResult(xml);
         }
 
@@ -76,7 +70,6 @@ namespace TinyOPDSCore.Controllers
         {
             string xml = new BooksCatalog().GetCatalogByGenre(name ?? "", acceptFB2()).ToString();
             xml = getHeader(xml);
-            
             return OPDSResult(xml);
         }
 
@@ -85,7 +78,6 @@ namespace TinyOPDSCore.Controllers
         {
             string xml = new OpenSearch().Search(searchTerm ?? "", searchType ?? "", acceptFB2(), pageNumber ?? 0).ToString();
             xml = getHeader(xml);
-            
             return OPDSResult(xml);
         }
 
