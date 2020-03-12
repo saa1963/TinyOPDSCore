@@ -13,7 +13,7 @@ using TinyOPDSCore.OPDS;
 
 namespace TinyOPDSCore.Controllers
 {
-    //[Route("")]
+    //[Route("/opdsserver")]
     [ApiController]
     public class ExtendedController : ControllerBase
     {
