@@ -17,7 +17,14 @@ namespace TinyOPDSCore.Controllers
     [ApiController]
     public class ExtendedController : ControllerBase
     {
-        [HttpGet("/")]
+        [HttpOptions("")]
+        public IActionResult indexoptions()
+        {
+            Response.Headers.Add("Access-Control-Request-Headers", "X-Requested-With");
+            return StatusCode(204);
+        }
+
+        [HttpGet("")]
         public IActionResult index()
         {
             string xml = new RootCatalog().Catalog.ToString();
@@ -25,7 +32,7 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/authorsindex/{name?}")]
+        [HttpGet("authorsindex/{name?}")]
         public IActionResult authorsindex(string name)
         {
             string xml = new AuthorsCatalog().GetCatalog(name ?? "").ToString();
@@ -33,10 +40,10 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/author/{name?}")]
-        public IActionResult author(string name)
+        [HttpGet("author/{name}/{page?}")]
+        public IActionResult author(string name, int? page)
         {
-            string xml = new BooksCatalog().GetCatalogByAuthor(name ?? "", acceptFB2()).ToString();
+            string xml = new BooksCatalog().GetCatalogByAuthor(name ?? "", page ?? 0, acceptFB2()).ToString();
             xml = getHeader(xml);
             return OPDSResult(xml);
         }
@@ -49,10 +56,10 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/sequence/{name?}")]
-        public IActionResult sequence(string name)
+        [HttpGet("/sequence/{name}/{page?}")]
+        public IActionResult sequence(string name, int? page)
         {
-            string xml = new BooksCatalog().GetCatalogBySequence(name ?? "", acceptFB2()).ToString();
+            string xml = new BooksCatalog().GetCatalogBySequence(name ?? "", page ?? 0, acceptFB2()).ToString();
             xml = getHeader(xml);
             return OPDSResult(xml);
         }
@@ -65,10 +72,10 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/genre/{name?}")]
-        public IActionResult genre(string name)
+        [HttpGet("/genre/{name}/{page?}")]
+        public IActionResult genre(string name, int? page)
         {
-            string xml = new BooksCatalog().GetCatalogByGenre(name ?? "", acceptFB2()).ToString();
+            string xml = new BooksCatalog().GetCatalogByGenre(name ?? "", page ?? 0, acceptFB2()).ToString();
             xml = getHeader(xml);
             return OPDSResult(xml);
         }

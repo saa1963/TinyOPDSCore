@@ -37,9 +37,9 @@ namespace TinyOPDSCore.OPDS
         /// </summary>
         /// <param name="author"></param>
         /// <returns></returns>
-        public XDocument GetCatalogByAuthor(string author, bool fb2Only)
+        public XDocument GetCatalogByAuthor(string author, int page, bool fb2Only)
         {
-            return GetCatalog(author, SearchFor.Author, fb2Only);
+            return GetCatalog(author, SearchFor.Author, fb2Only, page);
         }
 
         /// <summary>
@@ -47,9 +47,9 @@ namespace TinyOPDSCore.OPDS
         /// </summary>
         /// <param name="sequence"></param>
         /// <returns></returns>
-        public XDocument GetCatalogBySequence(string sequence, bool fb2Only)
+        public XDocument GetCatalogBySequence(string sequence, int page, bool fb2Only)
         {
-            return GetCatalog(sequence, SearchFor.Sequence, fb2Only);
+            return GetCatalog(sequence, SearchFor.Sequence, fb2Only, page);
         }
 
         /// <summary>
@@ -57,9 +57,9 @@ namespace TinyOPDSCore.OPDS
         /// </summary>
         /// <param name="author"></param>
         /// <returns></returns>
-        public XDocument GetCatalogByGenre(string genre, bool fb2Only)
+        public XDocument GetCatalogByGenre(string genre, int page, bool fb2Only)
         {
-            return GetCatalog(genre, SearchFor.Genre, fb2Only);
+            return GetCatalog(genre, SearchFor.Genre, fb2Only, page);
         }
 
 
@@ -70,7 +70,7 @@ namespace TinyOPDSCore.OPDS
         /// <returns></returns>
         public XDocument GetCatalogByTitle(string title, bool fb2Only, int pageNumber = 0, int threshold = 50)
         {
-            return GetCatalog(title, SearchFor.Title, fb2Only, threshold);
+            return GetCatalog(title, SearchFor.Title, fb2Only, pageNumber, threshold);
         }
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace TinyOPDSCore.OPDS
         /// <param name="acceptFB2">Client can accept fb2 files</param>
         /// <param name="threshold">Items per page</param>
         /// <returns></returns>
-        private XDocument GetCatalog(string searchPattern, SearchFor searchFor, bool acceptFB2, int threshold = 50)
+        private XDocument GetCatalog(string searchPattern, SearchFor searchFor, bool acceptFB2, int page, int threshold = 50)
         {
             if (!string.IsNullOrEmpty(searchPattern)) searchPattern = Uri.UnescapeDataString(searchPattern).Replace('+', ' ');
 
@@ -97,11 +97,12 @@ namespace TinyOPDSCore.OPDS
 
             int pageNumber = 0;
             // Extract and remove page number from the search patter
-            int j = searchPattern.IndexOf('/');
-            if (j > 0)
+            //int j = searchPattern.IndexOf('/');
+            if (page > 0)
             {
-                int.TryParse(searchPattern.Substring(j + 1), out pageNumber);
-                searchPattern = searchPattern.Substring(0, j);
+                //int.TryParse(searchPattern.Substring(j + 1), out pageNumber);
+                pageNumber = page;
+                //searchPattern = searchPattern.Substring(0, j);
             }
 
             // Get author's books

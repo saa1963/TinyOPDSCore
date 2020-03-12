@@ -24,7 +24,7 @@ namespace TinyOPDSCore.OPDS
         public static XElement search = new XElement("link", 
                                                 new XAttribute("href","/search?searchTerm={searchTerms}"),
                                                 new XAttribute("rel","search"),
-                                                new XAttribute("type","application/atom+xml"));
+                                                new XAttribute("type", "application/opensearchdescription+xml"));
 
         public static XElement start = new XElement("link",
                                                 new XAttribute("href", ""),
