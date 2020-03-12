@@ -53,7 +53,7 @@ namespace TinyOPDSCore
             {
                 app.UseDeveloperExceptionPage();
             }
-            
+
             //app.UseHttpsRedirection();
 
             app.UseRouting();
