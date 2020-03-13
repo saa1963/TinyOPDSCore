@@ -74,8 +74,11 @@ namespace TinyOPDSCore.OPDS
                             new XElement("updated", DateTime.UtcNow.ToUniversalTime()),
                             new XElement("id", "tag:root:genre:" + (useCyrillic ? genre.Translation : genre.Name)),
                             new XElement("title", (useCyrillic ? genre.Translation : genre.Name)),
-                            new XElement("content", string.Format(Localizer.Text("Books in genre «{0}»"), (useCyrillic ? genre.Translation : genre.Name)), new XAttribute("type", "text")),
-                            new XElement("link", new XAttribute("href", "/" + (topLevel ? "genres/" : "genre/") + (topLevel ? Uri.EscapeDataString((useCyrillic ? genre.Translation : genre.Name)) : genre.Tag)), new XAttribute("type", "application/atom+xml;profile=opds-catalog"))
+                            new XElement("content", 
+                                string.Format(Localizer.Text("Books in genre «{0}»"), (useCyrillic ? genre.Translation : genre.Name)), new XAttribute("type", "text")),
+                            new XElement("link", new XAttribute("href", 
+                                "/" + (topLevel ? "genres/" : "genre/") + (topLevel ? Uri.EscapeDataString((useCyrillic ? genre.Translation : genre.Name)) : genre.Tag)), 
+                                new XAttribute("type", "application/atom+xml;profile=opds-catalog"))
                         )
                     );
                 }

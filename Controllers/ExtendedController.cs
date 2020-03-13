@@ -48,7 +48,7 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/sequencesindex/{name?}")]
+        [HttpGet("sequencesindex/{name?}")]
         public IActionResult sequencesindex(string name)
         {
             string xml = new SequencesCatalog().GetCatalog(name ?? "").ToString();
@@ -56,7 +56,7 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/sequence/{name}/{page?}")]
+        [HttpGet("sequence/{name}/{page?}")]
         public IActionResult sequence(string name, int? page)
         {
             string xml = new BooksCatalog().GetCatalogBySequence(name ?? "", page ?? 0, acceptFB2()).ToString();
@@ -64,7 +64,7 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/genres/{name?}")]
+        [HttpGet("genres/{name?}")]
         public IActionResult genres(string name)
         {
             string xml = new GenresCatalog().GetCatalog(name ?? "").ToString();
@@ -72,7 +72,7 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/genre/{name}/{page?}")]
+        [HttpGet("genre/{name}/{page?}")]
         public IActionResult genre(string name, int? page)
         {
             string xml = new BooksCatalog().GetCatalogByGenre(name ?? "", page ?? 0, acceptFB2()).ToString();
@@ -80,7 +80,7 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        [HttpGet("/search")]
+        [HttpGet("search")]
         public IActionResult search(string searchTerm, string searchType, int? pageNumber)
         {
             string xml = new OpenSearch().Search(searchTerm ?? "", searchType ?? "", acceptFB2(), pageNumber ?? 0).ToString();
