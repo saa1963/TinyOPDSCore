@@ -41,7 +41,8 @@ namespace TinyOPDSCore.OPDS
                 );
 
             // Get all authors names starting with searchPattern
-            List<string> Sequences = (from s in LibraryFactory.GetLibrary().Sequences where s.StartsWith(searchPattern) && s.Length > searchPattern.Length + 1 select s).ToList();
+            List<string> Sequences = 
+                (from s in LibraryFactory.GetLibrary().Sequences where s.StartsWith(searchPattern) && s.Length > searchPattern.Length + 1 select s).ToList();
 
             if (Sequences.Count > threshold)
             {

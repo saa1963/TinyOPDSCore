@@ -21,14 +21,14 @@ namespace TinyOPDSCore.Data
                 raw.SetProvider(new SQLite3Provider_e_sqlite3());
                 string fname = DataBaseFile();
                 rc = raw.sqlite3_open(fname, out db);
+                if (rc != raw.SQLITE_OK)
+                {
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                }
                 raw.sqlite3_create_collation(db, "MHL_SYSTEM", null, mhl_system_collation);
                 raw.sqlite3_create_collation(db, "MHL_SYSTEM_NOCASE", null, mhl_system_nocase_collation);
                 raw.sqlite3_create_function(db, "MHL_UPPER", 1, null, mhl_upper);
                 raw.sqlite3_create_function(db, "MHL_LOWER", 1, null, mhl_lower);
-                if (rc != raw.SQLITE_OK)
-                {
-                    throw new Exception($"Ошибка открытия базы данных {fname}");
-                }
             }
         }
 
@@ -95,7 +95,7 @@ namespace TinyOPDSCore.Data
                     rc = raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where IsDeleted=0 and Lang='ru'", out stmt);
                     if (rc != raw.SQLITE_OK)
                     {
-                        throw new Exception("Ошибка базы данных");
+                        throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                     }
                     int count = 0;
                     if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
@@ -122,7 +122,7 @@ namespace TinyOPDSCore.Data
                     if (raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where SearchExt = '.FB2' and IsDeleted=0 and Lang='ru'", out stmt) 
                         != raw.SQLITE_OK)
                     {
-                        throw new Exception("Ошибка базы данных");
+                        throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                     }
                     int count = 0;
                     if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
@@ -149,7 +149,7 @@ namespace TinyOPDSCore.Data
                     rc = raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where SearchExt = '.EPUB' and IsDeleted=0 and Lang='ru'", out stmt);
                     if (rc != raw.SQLITE_OK)
                     {
-                        throw new Exception("Ошибка базы данных");
+                        throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                     }
                     int count = 0;
                     if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
@@ -181,7 +181,7 @@ namespace TinyOPDSCore.Data
                         rc = raw.sqlite3_prepare_v2(db, "select distinct Title from Books order by Title and IsDeleted=0 and Lang='ru'", out stmt);
                         if (rc != raw.SQLITE_OK)
                         {
-                            throw new Exception("Ошибка базы данных");
+                            throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                         }
                         while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                         {
@@ -213,7 +213,7 @@ namespace TinyOPDSCore.Data
                         rc = raw.sqlite3_prepare_v2(db, "select distinct SearchName from Authors where substr(SearchName, 1, 1) >= 'А' order by SearchName", out stmt);
                         if (rc != raw.SQLITE_OK)
                         {
-                            throw new Exception("Ошибка базы данных");
+                            throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                         }
                         while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                         {
@@ -246,7 +246,7 @@ namespace TinyOPDSCore.Data
                             "select distinct SearchSeriesTitle from Series where substr(SearchSeriesTitle, 1, 1) >= 'А' order by SearchSeriesTitle", out stmt);
                         if (rc != raw.SQLITE_OK)
                         {
-                            throw new Exception("Ошибка базы данных");
+                            throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                         }
                         while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                         {
@@ -275,7 +275,7 @@ namespace TinyOPDSCore.Data
                     if (raw.sqlite3_prepare_v2(db,
                         "select GenreAlias, GenreCode from Genres where ParentCode = '0' order by GenreCode", out stmt) != raw.SQLITE_OK)
                     {
-                        throw new Exception("Ошибка базы данных");
+                        throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                     }
                     while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                     {
@@ -288,7 +288,7 @@ namespace TinyOPDSCore.Data
                         if (raw.sqlite3_prepare_v2(db,
                             "select GenreAlias, FB2Code from Genres where ParentCode = ? order by GenreCode", out stmt1) != raw.SQLITE_OK)
                         {
-                            throw new Exception("Ошибка базы данных");
+                            throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                         }
                         raw.sqlite3_bind_text(stmt1, 1, genreCode.utf8_to_string());
                         while (raw.sqlite3_step(stmt1) == raw.SQLITE_ROW)
@@ -588,7 +588,8 @@ namespace TinyOPDSCore.Data
                     "b.SeqNumber, b.BookSize, b.BookID " +
                     "from Genre_List gl inner join Books b on gl.BookID = b.BookID inner join Genres g on gl.GenreCode = g.GenreCode " +
                     "where g.fb2code = ? and b.IsDeleted = 0 and b.Lang='ru'";
-                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) 
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                 raw.sqlite3_bind_text(stmt, 1, genre);
                 while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
@@ -645,7 +646,8 @@ namespace TinyOPDSCore.Data
                     "b.SeqNumber, b.BookSize, b.BookID " +
                     "from Series s inner join Books b on s.SeriesID = b.SeriesID " +
                     "where s.SearchSeriesTitle = ? and b.IsDeleted = 0 and b.Lang='ru'";
-                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) 
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                 raw.sqlite3_bind_text(stmt, 1, sequence);
                 while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
