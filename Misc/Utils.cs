@@ -277,25 +277,6 @@ namespace TinyOPDSCore
         {
             get => config["ServerName"];
         }
-        public static int ServerPort
-        {
-            get => Int32.TryParse(config["ServerPort"], out int result) ? result : 8080;
-                
-        }
-        public static bool StartWithWindows
-        {
-            get => Boolean.TryParse(config["ServerPort"], out bool result) ? result : false;
-        }
-
-        public static bool StartMinimized
-        {
-            get => Boolean.TryParse(config["StartMinimized"], out bool result) ? result : false;
-        }
-
-        public static bool CloseToTray
-        {
-            get => Boolean.TryParse(config["CloseToTray"], out bool result) ? result : true;
-        }
         public static string ConvertorPath
         {
             get => config["ConvertorPath"];
@@ -304,76 +285,9 @@ namespace TinyOPDSCore
         {
             get => config["Language"] ?? "en";
         }
-        public static bool OpenNATPort
-        {
-            get => Boolean.TryParse(config["OpenNATPort"], out bool result) ? result : false;
-        }
-        public static string ServiceFilesPath
-        {
-            get => config["ServiceFilesPath"];
-        }
-        public static bool SaveLogToDisk
-        {
-            get => Boolean.TryParse(config["SaveLogToDisk"], out bool result) ? result : true;
-        }
         public static string RootPrefix
         {
             get => config["RootPrefix"];
-        }
-        public static bool WatchLibrary
-        {
-            get => Boolean.TryParse(config["WatchLibrary"], out bool result) ? result : false;
-        }
-        public static bool UseUPnP
-        {
-            get => Boolean.TryParse(config["UseUPnP"], out bool result) ? result : true;
-        }
-        public static bool UseHTTPAuth
-        {
-            get => Boolean.TryParse(config["UseHTTPAuth"], out bool result) ? result : false;
-        }
-        public static string Credentials
-        {
-            get => config["Credentials"];
-        }
-        public static bool BanClients
-        {
-            get => Boolean.TryParse(config["BanClients"], out bool result) ? result : false;
-        }
-        public static int LogLevel
-        {
-            get => Int32.TryParse(config["LogLevel"], out int result) ? result : 0;
-        }
-        public static bool RememberClients
-        {
-            get => Boolean.TryParse(config["RememberClients"], out bool result) ? result : false;
-        }
-        public static int UpdatesCheck
-        {
-            get => Int32.TryParse(config["UpdatesCheck"], out int result) ? result : 0;
-        }
-        public static DateTime? LastCheck
-        {
-            get
-            {
-                try
-                {
-                    string t = config["LastCheck"];
-                    return new DateTime(Int32.Parse(t.Substring(0, 4)), Int32.Parse(t.Substring(5, 2)), Int32.Parse(t.Substring(8, 2)));
-                }
-                catch
-                {
-                    return null;
-                }
-            }
-        }
-        public static int WrongAttemptsCount
-        {
-            get => Int32.TryParse(config["WrongAttemptsCount"], out int result) ? result : 5;
-        }
-        public static int LocalInterfaceIndex
-        {
-            get => Int32.TryParse(config["LocalInterfaceIndex"], out int result) ? result : 0;
         }
         public static bool UseAbsoluteUri
         {

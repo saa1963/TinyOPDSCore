@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using TinyOPDSCore.Data;
 using TinyOPDSCore.OPDS;
@@ -17,12 +19,18 @@ namespace TinyOPDSCore.Controllers
     [ApiController]
     public class ExtendedController : ControllerBase
     {
-        [HttpOptions("")]
-        public IActionResult indexoptions()
+        ILogger<ExtendedController> logger = null;
+        public ExtendedController(ILogger<ExtendedController> _logger)
         {
-            Response.Headers.Add("Access-Control-Request-Headers", "X-Requested-With");
-            return StatusCode(204);
+            logger = _logger;
+            
         }
+        //[HttpOptions("")]
+        //public IActionResult indexoptions()
+        //{
+        //    Response.Headers.Add("Access-Control-Request-Headers", "X-Requested-With");
+        //    return StatusCode(204);
+        //}
 
         [HttpGet("")]
         public IActionResult index()
@@ -125,16 +133,17 @@ namespace TinyOPDSCore.Controllers
                 memStream.Position = 0;
 
                 var outputStream = new MemoryStream();
+                var filename = Transliteration.Front($"{book.Authors.First()}_{book.Title}.fb2");
                 using (ZipArchive zipArchive = new ZipArchive(outputStream, ZipArchiveMode.Create, true))
                 {
-                    var entry = zipArchive.CreateEntry(Transliteration.Front($"{book.Authors.First()}_{book.Title}.fb2"));
+                    var entry = zipArchive.CreateEntry(filename);
                     using (var z = entry.Open())
                     {
                         memStream.WriteTo(z);
                     }
                 }
                 outputStream.Seek(0, SeekOrigin.Begin);
-                return File(outputStream, "application/fb2+zip", "11.zip");
+                return File(outputStream, "application/fb2+zip", filename + ".zip");
             }
             //else if (fname.Contains(".jpeg"))
             //{
@@ -188,6 +197,13 @@ namespace TinyOPDSCore.Controllers
             //}
             else
                 return NoContent();
+        }
+
+        [HttpGet("favicon.ico")]
+        public IActionResult favicon()
+        {
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("TinyOPDSCore.TinyOPDS.ico");
+            return File(stream, "image/x-icon", "favicon.ico");
         }
 
         private IActionResult OPDSResult(string xml)
