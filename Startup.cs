@@ -19,6 +19,8 @@ namespace TinyOPDSCore
         {
             Configuration = configuration;
             Properties.config = configuration;
+            Localizer.Init();
+            Localizer.SetLanguage(Properties.Language);
         }
 
         public IConfiguration Configuration { get; }

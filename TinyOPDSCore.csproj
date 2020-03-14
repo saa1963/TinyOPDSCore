@@ -6,6 +6,11 @@
 
   <ItemGroup>
     <None Remove="Resources\favicon.ico" />
+    <None Remove="translation.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="translation.xml" />
   </ItemGroup>
 
   <ItemGroup>
