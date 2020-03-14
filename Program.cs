@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
 
 namespace TinyOPDSCore
 {
@@ -21,6 +22,11 @@ namespace TinyOPDSCore
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>().UseUrls("http://*:63395;http://*:5000");
-                });
+                })
+            .ConfigureLogging(logging => 
+            {
+                logging.ClearProviders();
+                logging.AddNLog();
+            });
     }
 }

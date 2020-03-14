@@ -23,7 +23,6 @@ namespace TinyOPDSCore.Controllers
         public ExtendedController(ILogger<ExtendedController> _logger)
         {
             logger = _logger;
-            
         }
         //[HttpOptions("")]
         //public IActionResult indexoptions()

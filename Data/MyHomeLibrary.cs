@@ -5,6 +5,8 @@ using System.Text;
 using System.Data;
 using System.IO;
 using SQLitePCL;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
 
 namespace TinyOPDSCore.Data
 {
@@ -14,12 +16,17 @@ namespace TinyOPDSCore.Data
         private sqlite3 db;
         public MyHomeLibrary()
         {
+            var loggerFactory = new LoggerFactory();
+            loggerFactory.AddNLog();
+            ILogger<MyHomeLibrary> logger = loggerFactory.CreateLogger<MyHomeLibrary>();
+
             LibraryPath = Properties.LibraryPath;
             int rc;
             if (!String.IsNullOrWhiteSpace(Properties.MyHomeLibraryPath))
             {
                 raw.SetProvider(new SQLite3Provider_e_sqlite3());
                 string fname = DataBaseFile();
+                logger.LogInformation($"Используется БД - {fname}");
                 rc = raw.sqlite3_open(fname, out db);
                 if (rc != raw.SQLITE_OK)
                 {
@@ -77,10 +84,6 @@ namespace TinyOPDSCore.Data
             return file;
         }
 
-        private string GetConnectionString()
-        {
-            return "Data Source=" + DataBaseFile();
-        }
         public string LibraryPath { get; set; }
         public bool IsChanged { get; set; }
 

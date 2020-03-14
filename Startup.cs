@@ -41,11 +41,6 @@ namespace TinyOPDSCore
                                             .AllowAnyMethod();
                     });
             });
-            services.AddLogging(loggingBuilder =>
-            {
-                loggingBuilder.ClearProviders();
-                loggingBuilder.AddNLog();
-            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
