@@ -672,14 +672,27 @@ namespace TinyOPDSCore.Data
 
         public List<Book> GetBooksByTitle(string title)
         {
-            //_lst.Clear();
-            //var lst = new List<Book>();
+            _lst.Clear();
+            var lst = new List<Book>();
+            sqlite3_stmt stmt = null;
+            try
+            {
+                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " +
+                    "b.SeqNumber, b.BookSize, b.BookID, g.GenreAlias, a.SearchName " +
+                    "from Author_List al inner join Authors a on al.AuthorID = a.AuthorID inner join Books b on al.BookID = b.BookID " +
+                    "inner join Genre_List gl on b.BookID = gl.BookID inner join Genres g on gl.GenreCode = g.GenreCode " +
+                    "where b.SearchTitle like ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
+            }
+            finally
+            {
+                raw.sqlite3_finalize(stmt);
+            }
             //using (var cn = new SQLiteConnection(ConnectionString))
             //{
             //    if (cn.State != ConnectionState.Open) cn.Open();
-            //    var cSql = "select b.*, (select a.SearchName from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where al.BookID = b.BookID collate NOCASE) Author, " +
-            //        "(select g.GenreAlias from Genre_List gl inner join Genres g on gl.GenreCode = g.GenreCode where gl.BookID = b.BookID collate NOCASE) Genre " +
-            //        "from Books where b.SearchTitle like @p1 and b.IsDeleted = 0 collate NOCASE";
+            //var cSql = "select b.*, (select a.SearchName from Author_List al inner join Authors a on al.AuthorID = a.AuthorID where al.BookID = b.BookID collate NOCASE) Author, " +
+            //    "(select g.GenreAlias from Genre_List gl inner join Genres g on gl.GenreCode = g.GenreCode where gl.BookID = b.BookID collate NOCASE) Genre " +
+            //    "from Books where b.SearchTitle like @p1 and b.IsDeleted = 0 collate NOCASE";
             //    var cmd = new SQLiteCommand(cSql, cn);
             //    cmd.Parameters.Add("@p1", SQLiteType.Text, 80).Value = "%" + title.ToUpper() + "%";
             //    using (var dr = cmd.ExecuteReader())
@@ -695,8 +708,7 @@ namespace TinyOPDSCore.Data
             //        }
             //    }
             //}
-            //return lst;
-            return null;
+            return lst;
         }
 
         public void Load()

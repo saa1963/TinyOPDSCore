@@ -24,12 +24,6 @@ namespace TinyOPDSCore.Controllers
         {
             logger = _logger;
         }
-        //[HttpOptions("")]
-        //public IActionResult indexoptions()
-        //{
-        //    Response.Headers.Add("Access-Control-Request-Headers", "X-Requested-With");
-        //    return StatusCode(204);
-        //}
 
         [HttpGet("")]
         public IActionResult index()
@@ -95,12 +89,12 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
-        //[HttpGet("{*opds-opensearch.xml}")]
-        //public IActionResult opensearch()
-        //{
-        //    string xml = getOpensearchHeader();
-        //    return OPDSResult(xml);
-        //}
+        [HttpGet("opds-opensearch.xml")]
+        public IActionResult opensearch()
+        {
+            string xml = getOpensearchHeader();
+            return OPDSResult(xml);
+        }
 
         [HttpGet("/{fname1}/{fname2}")]
         public IActionResult Fb2zip(string fname1, string fname2)
