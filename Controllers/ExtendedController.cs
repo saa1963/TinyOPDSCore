@@ -213,7 +213,7 @@ namespace TinyOPDSCore.Controllers
 
         private string getOpensearchHeader()
         {
-            string xml0 = new OpenSearch().OpenSearchDescription().ToString();
+            string xml0 = new OpenSearch().OpenSearchDescription(HttpContext.Request.Headers["Host"]).ToString();
             string xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + xml0.Insert(22, " xmlns=\"http://a9.com/-/spec/opensearch/1.1/\"");
             return absoluteUri(xml);
         }

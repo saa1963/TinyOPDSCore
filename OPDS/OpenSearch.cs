@@ -25,15 +25,22 @@ namespace TinyOPDSCore.OPDS
 {
     public class OpenSearch
     {
-        public XDocument OpenSearchDescription()
+        public XDocument OpenSearchDescription(string host)
         {
+            string template = "/search?searchTerm={searchTerms}";
+            string image = "/favicon.ico";
+            if (Properties.UseAbsoluteUri)
+            {
+                template = "http://" + host.UrlCombine(Properties.RootPrefix) + template;
+                image = "http://" + host.UrlCombine(Properties.RootPrefix) + image;
+            }
             XDocument doc = new XDocument(
                 // Add root element and namespaces
                 new XElement("OpenSearchDescription",
                     new XElement("ShortName", "TinyOPDS"),
                     new XElement("LongName", "TinyOPDS"),
-                    new XElement("Url", new XAttribute("type", "application/atom+xml"), new XAttribute("template", "/search?searchTerm={searchTerms}")),
-                    new XElement("Image", "/favicon.ico", new XAttribute("width", "16"), new XAttribute("height", "16")),
+                    new XElement("Url", new XAttribute("type", "application/atom+xml"), new XAttribute("template", template)),
+                    new XElement("Image", image, new XAttribute("width", "16"), new XAttribute("height", "16")),
                     new XElement("Tags"),
                     new XElement("Contact"),
                     new XElement("Developer"),
