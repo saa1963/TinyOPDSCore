@@ -14,6 +14,8 @@ namespace TinyOPDSCore.Data
     {
         Object objectLock = new object();
         private sqlite3 db;
+
+        [Obsolete]
         public MyHomeLibrary()
         {
             var loggerFactory = new LoggerFactory();
@@ -442,8 +444,8 @@ namespace TinyOPDSCore.Data
             while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
             {
                 var lastname = raw.sqlite3_column_text(stmt, 0).utf8_to_string() ?? "";
-                var firstname = raw.sqlite3_column_text(stmt, 0).utf8_to_string() ?? "";
-                var middlename = raw.sqlite3_column_text(stmt, 0).utf8_to_string() ?? "";
+                var firstname = raw.sqlite3_column_text(stmt, 1).utf8_to_string() ?? "";
+                var middlename = raw.sqlite3_column_text(stmt, 2).utf8_to_string() ?? "";
                 rt.Add(string.Concat(lastname, " ", firstname, " ", middlename).Replace("  ", " ").Capitalize());
             }
             raw.sqlite3_finalize(stmt);

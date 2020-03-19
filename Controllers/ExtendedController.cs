@@ -19,14 +19,8 @@ namespace TinyOPDSCore.Controllers
     [ApiController]
     public class ExtendedController : ControllerBase
     {
-        ILogger<ExtendedController> logger = null;
-        public ExtendedController(ILogger<ExtendedController> _logger)
-        {
-            logger = _logger;
-        }
-
         [HttpGet("")]
-        public IActionResult index()
+        public IActionResult Index()
         {
             string xml = new RootCatalog().Catalog.ToString();
             xml = getHeader(xml);
@@ -34,7 +28,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("authorsindex/{name?}")]
-        public IActionResult authorsindex(string name)
+        public IActionResult Authorsindex(string name)
         {
             string xml = new AuthorsCatalog().GetCatalog(name ?? "").ToString();
             xml = getHeader(xml);
@@ -42,7 +36,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("author/{name}/{page?}")]
-        public IActionResult author(string name, int? page)
+        public IActionResult Author(string name, int? page)
         {
             string xml = new BooksCatalog().GetCatalogByAuthor(name ?? "", page ?? 0, acceptFB2()).ToString();
             xml = getHeader(xml);
@@ -50,7 +44,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("sequencesindex/{name?}")]
-        public IActionResult sequencesindex(string name)
+        public IActionResult Sequencesindex(string name)
         {
             string xml = new SequencesCatalog().GetCatalog(name ?? "").ToString();
             xml = getHeader(xml);
@@ -58,7 +52,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("sequence/{name}/{page?}")]
-        public IActionResult sequence(string name, int? page)
+        public IActionResult Sequence(string name, int? page)
         {
             string xml = new BooksCatalog().GetCatalogBySequence(name ?? "", page ?? 0, acceptFB2()).ToString();
             xml = getHeader(xml);
@@ -66,7 +60,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("genres/{name?}")]
-        public IActionResult genres(string name)
+        public IActionResult Genres(string name)
         {
             string xml = new GenresCatalog().GetCatalog(name ?? "").ToString();
             xml = getHeader(xml);
@@ -74,7 +68,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("genre/{name}/{page?}")]
-        public IActionResult genre(string name, int? page)
+        public IActionResult Genre(string name, int? page)
         {
             string xml = new BooksCatalog().GetCatalogByGenre(name ?? "", page ?? 0, acceptFB2()).ToString();
             xml = getHeader(xml);
@@ -82,7 +76,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("search")]
-        public IActionResult search(string searchTerm, string searchType, int? pageNumber)
+        public IActionResult Search(string searchTerm, string searchType, int? pageNumber)
         {
             string xml = new OpenSearch().Search(searchTerm ?? "", searchType ?? "", acceptFB2(), pageNumber ?? 0).ToString();
             xml = getHeader(xml);
@@ -90,7 +84,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("opds-opensearch.xml")]
-        public IActionResult opensearch()
+        public IActionResult Opensearch()
         {
             string xml = getOpensearchHeader();
             return OPDSResult(xml);
@@ -111,12 +105,10 @@ namespace TinyOPDSCore.Controllers
                 {
                     string[] pathParts = book.FilePath.Split('@');
 
-                    using (ZipArchive zipArchive = ZipFile.OpenRead(pathParts[0]))
-                    {
-                        var entry = zipArchive.Entries.First(e => e.Name.Contains(pathParts[1]));
-                        if (entry != null)
-                            entry.Open().CopyTo(memStream);
-                    }
+                    using ZipArchive zipArchive = ZipFile.OpenRead(pathParts[0]);
+                    var entry = zipArchive.Entries.First(e => e.Name.Contains(pathParts[1]));
+                    if (entry != null)
+                        entry.Open().CopyTo(memStream);
                 }
                 else
                 {
@@ -193,7 +185,7 @@ namespace TinyOPDSCore.Controllers
         }
 
         [HttpGet("favicon.ico")]
-        public IActionResult favicon()
+        public IActionResult Favicon()
         {
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("TinyOPDSCore.TinyOPDS.ico");
             return File(stream, "image/x-icon", "favicon.ico");
