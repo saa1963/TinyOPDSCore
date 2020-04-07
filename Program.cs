@@ -23,10 +23,10 @@ namespace TinyOPDSCore
                 {
                     webBuilder.UseStartup<Startup>().UseUrls("http://*:5000");
                 })
-            .ConfigureLogging(logging => 
-            {
-                logging.ClearProviders();
-                logging.AddNLog();
-            });
+                .ConfigureLogging(logging => 
+                {
+                    logging.ClearProviders();
+                    logging.AddNLog();
+                });
     }
 }

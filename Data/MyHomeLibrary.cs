@@ -15,11 +15,9 @@ namespace TinyOPDSCore.Data
         Object objectLock = new object();
         private sqlite3 db;
 
-        [Obsolete]
         public MyHomeLibrary()
         {
-            var loggerFactory = new LoggerFactory();
-            loggerFactory.AddNLog();
+            var loggerFactory = new NLogLoggerFactory();
             ILogger<MyHomeLibrary> logger = loggerFactory.CreateLogger<MyHomeLibrary>();
 
             LibraryPath = Properties.LibraryPath;

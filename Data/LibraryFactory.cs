@@ -12,6 +12,7 @@ namespace TinyOPDSCore.Data
     {
         private static Object thisLock = new Object();
         private static ILibrary _library = null;
+
         public static ILibrary GetLibrary()
         {
             lock (thisLock)

@@ -47,20 +47,20 @@ namespace TinyOPDSCore
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
-            app.Use(async (context, next) =>
-            {
-                // Do work that doesn't write to the Response.
-                logger.LogInformation(
-                    $"Host: {context.Request.Host.Value ?? ""} " +
-                    $"Method: {context.Request.Method} " +
-                    $"Path: {context.Request.Path}");
-                await next.Invoke();
-                // Do logging or other work that doesn't write to the Response.
-                logger.LogInformation(
-                    $"StatusCode: {context.Response.StatusCode} " +
-                    $"ContentType: {context.Response.ContentType}"
-                    );
-            });
+            //app.Use(async (context, next) =>
+            //{
+            //    // Do work that doesn't write to the Response.
+            //    logger.LogInformation(
+            //        $"Host: {context.Request.Host.Value ?? ""} " +
+            //        $"Method: {context.Request.Method} " +
+            //        $"Path: {context.Request.Path}");
+            //    await next.Invoke();
+            //    // Do logging or other work that doesn't write to the Response.
+            //    logger.LogInformation(
+            //        $"StatusCode: {context.Response.StatusCode} " +
+            //        $"ContentType: {context.Response.ContentType}"
+            //        );
+            //});
 
             if (env.IsDevelopment())
             {

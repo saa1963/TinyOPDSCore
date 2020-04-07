@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="appsettings.Development.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Resources\favicon.ico" />
     <None Remove="TinyOPDS.ico" />
     <None Remove="translation.xml" />
@@ -18,9 +22,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="appsettings.Development.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FB2Library" Version="1.3.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.1" />
-    <PackageReference Include="NLog.Extensions.Logging" Version="1.6.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.2" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="1.6.2" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.0.2" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.0.2" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.0.2" />
