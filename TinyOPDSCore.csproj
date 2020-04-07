@@ -5,10 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="appsettings.Development.json" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Remove="Resources\favicon.ico" />
     <None Remove="TinyOPDS.ico" />
     <None Remove="translation.xml" />
@@ -19,12 +15,6 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="translation.xml" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="appsettings.Development.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +31,12 @@
 
   <ItemGroup>
     <Resource Include="Resources\favicon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings.Development.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 
