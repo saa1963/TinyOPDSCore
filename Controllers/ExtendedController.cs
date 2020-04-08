@@ -27,6 +27,14 @@ namespace TinyOPDSCore.Controllers
             return OPDSResult(xml);
         }
 
+        [HttpGet("recentbooks/{page?}")]
+        public IActionResult RecentBooks(int? pageNumber)
+        {
+            string xml = new OpenSearch().Search("", "recentbooks", acceptFB2(), pageNumber ?? 0).ToString();
+            xml = getHeader(xml);
+            return OPDSResult(xml);
+        }
+
         [HttpGet("authorsindex/{name?}")]
         public IActionResult Authorsindex(string name)
         {

@@ -86,6 +86,10 @@ namespace TinyOPDSCore.OPDS
                     titles = LibraryFactory.GetLibrary().GetBooksByTitle(transSearchPattern);
                 }
             }
+            else if (searchType.Equals("recentbooks"))
+            {
+                titles = LibraryFactory.GetLibrary().GetBooksRecent();
+            }
 
             if (string.IsNullOrEmpty(searchType) && authors.Count > 0 && titles.Count > 0)
             {
@@ -113,6 +117,12 @@ namespace TinyOPDSCore.OPDS
             {
                 if (pageNumber > 0) searchPattern += "/" + pageNumber;
                 return new BooksCatalog().GetCatalogByTitle(searchPattern, fb2Only, 0, 1000);
+            }
+            else if (searchType.Equals("recentbooks"))
+            {
+                //if (pageNumber > 0) searchPattern += "/" + pageNumber;
+                //return new BooksCatalog().GetCatalogByTitle(searchPattern, fb2Only, 0, 1000);
+                return new BooksCatalog().GetCatalogRecent(fb2Only, pageNumber, 1000);
             }
             return doc;
         }

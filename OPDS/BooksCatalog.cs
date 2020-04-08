@@ -29,7 +29,8 @@ namespace TinyOPDSCore.OPDS
             Author = 0,
             Sequence,
             Genre,
-            Title
+            Title,
+            Recent
         }
 
         /// <summary>
@@ -74,6 +75,16 @@ namespace TinyOPDSCore.OPDS
         }
 
         /// <summary>
+        /// Returns books catalog by selected genre
+        /// </summary>
+        /// <param name="author"></param>
+        /// <returns></returns>
+        public XDocument GetCatalogRecent(bool fb2Only, int pageNumber = 0, int threshold = 50)
+        {
+            return GetCatalog("", SearchFor.Recent, fb2Only, pageNumber, threshold);
+        }
+
+        /// <summary>
         /// Returns books catalog for specific search
         /// </summary>
         /// <param name="searchPattern">Keyword to search</param>
@@ -87,7 +98,10 @@ namespace TinyOPDSCore.OPDS
 
             XDocument doc = new XDocument(
                 // Add root element and namespaces
-                new XElement("feed", new XAttribute(XNamespace.Xmlns + "dc", Namespaces.dc), new XAttribute(XNamespace.Xmlns + "os", Namespaces.os), new XAttribute(XNamespace.Xmlns + "opds", Namespaces.opds),
+                new XElement("feed", 
+                    new XAttribute(XNamespace.Xmlns + "dc", Namespaces.dc), 
+                    new XAttribute(XNamespace.Xmlns + "os", Namespaces.os), 
+                    new XAttribute(XNamespace.Xmlns + "opds", Namespaces.opds),
                     new XElement("title", Localizer.Text("Books by author ") + searchPattern),
                     new XElement("updated", DateTime.UtcNow.ToUniversalTime()),
                     new XElement("icon", "/icons/books.ico"),
@@ -134,6 +148,10 @@ namespace TinyOPDSCore.OPDS
                             if (transTitles.Count > 0) books.AddRange(transTitles);
                         }
                     }
+                    break;
+                case SearchFor.Recent:
+                    catalogType = "/recentbooks/";
+                    books = LibraryFactory.GetLibrary().GetBooksRecent();
                     break;
             }
 

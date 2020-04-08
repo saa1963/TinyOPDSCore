@@ -659,6 +659,61 @@ namespace TinyOPDSCore.Data
             return lst;
         }
 
+        public int GetBooksRecentCount()
+        {
+            sqlite3_stmt stmt = null;
+            try
+            {
+                var cSql = "select count(*) " +
+                    "from Books b " +
+                    "where b.Folder = ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
+                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK)
+                {
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                }
+                raw.sqlite3_bind_text(stmt, 1, "fb2-691100-692055.zip");
+                int count = 0;
+                if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                {
+                    count = raw.sqlite3_column_int(stmt, 0);
+                }
+                return count;
+            }
+            finally
+            {
+                raw.sqlite3_finalize(stmt);
+            }
+        }
+
+        public List<Book> GetBooksRecent()
+        {
+            var lst = new List<Book>();
+            sqlite3_stmt stmt = null;
+            try
+            {
+                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " +
+                    "b.SeqNumber, b.BookSize, b.BookID " + 
+                    "from Books b " +
+                    "where b.Folder = ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
+                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK)
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                raw.sqlite3_bind_text(stmt, 1, "fb2-691100-692055.zip");
+                while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                {
+                    var o = CreateBook(stmt);
+                    var bookid = raw.sqlite3_column_int(stmt, 10);
+                    o.Authors.AddRange(ThisBookAuthors(bookid));
+                    o.Genres.AddRange(ThisBookGenres(bookid));
+                    lst.Add(o);
+                }
+            }
+            finally
+            {
+                raw.sqlite3_finalize(stmt);
+            }
+            return lst;
+        }
+
         public void Load()
         {
             throw new NotImplementedException();

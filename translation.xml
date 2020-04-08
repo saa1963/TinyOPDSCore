@@ -418,12 +418,12 @@
       <text lang="ru">Новая версия [OK} доступна для загрузки.\nЖелаете загрузить сейчас?</text>
     </property>
     <property>
-      <text lang="en"></text>
-      <text lang="ru"></text>
+      <text lang="en">Recent books</text>
+      <text lang="ru">Последние поступления</text>
     </property>
     <property>
-      <text lang="en"></text>
-      <text lang="ru"></text>
+      <text lang="en">Recent {0} books to library</text>
+      <text lang="ru">{0} новых книг в библиотеке</text>
     </property>
     <property>
       <text lang="en"></text>

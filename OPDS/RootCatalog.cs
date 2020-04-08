@@ -48,6 +48,13 @@ namespace TinyOPDSCore.OPDS
                           Links.start,
                           Links.self,
 
+                          new XElement("entry",
+                              new XElement("updated", DateTime.UtcNow.ToUniversalTime()),
+                              new XElement("id", "tag:root:recentbooks"),
+                              new XElement("title", Localizer.Text("Recent books"), new XAttribute("type", "text")),
+                              new XElement("content", string.Format(Localizer.Text("Recent {0} books to library"), LibraryFactory.GetLibrary().GetBooksRecentCount()), new XAttribute("type", "text")),
+                              new XElement("link", new XAttribute("href", "/recentbooks"), new XAttribute("type", "application/atom+xml;profile=opds-catalog"))
+                              ),
                           // Add catalog entries
                           new XElement("entry",
                               new XElement("updated", DateTime.UtcNow.ToUniversalTime()),

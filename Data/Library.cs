@@ -349,6 +349,14 @@ namespace TinyOPDSCore.Data
         {
             lock (_books) return _books.Values.Where(b => b.Title.IndexOf(title, StringComparison.OrdinalIgnoreCase) >= 0 || b.Sequence.IndexOf(title, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
         }
+        public int GetBooksRecentCount()
+        {
+            throw new NotImplementedException();
+        }
+        public List<Book> GetBooksRecent()
+        {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// Return books by selected author(s)
