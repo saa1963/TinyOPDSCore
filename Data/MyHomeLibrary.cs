@@ -662,16 +662,25 @@ namespace TinyOPDSCore.Data
         public int GetBooksRecentCount()
         {
             sqlite3_stmt stmt = null;
+            string maxFolder = "";
             try
             {
-                var cSql = "select count(*) " +
+                var cSql = "select Max(Folder) from Books";
+                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK)
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                {
+                    maxFolder = raw.sqlite3_column_text(stmt, 0).utf8_to_string();
+                }
+                raw.sqlite3_reset(stmt);
+                cSql = "select count(*) " +
                     "from Books b " +
                     "where b.Folder = ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK)
                 {
                     throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                 }
-                raw.sqlite3_bind_text(stmt, 1, "fb2-691100-692055.zip");
+                raw.sqlite3_bind_text(stmt, 1, maxFolder);
                 int count = 0;
                 if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
@@ -689,15 +698,24 @@ namespace TinyOPDSCore.Data
         {
             var lst = new List<Book>();
             sqlite3_stmt stmt = null;
+            string maxFolder = "";
             try
             {
-                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " +
-                    "b.SeqNumber, b.BookSize, b.BookID " + 
-                    "from Books b " +
-                    "where b.Folder = ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
+                var cSql = "select Max(Folder) from Books";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK)
                     throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
-                raw.sqlite3_bind_text(stmt, 1, "fb2-691100-692055.zip");
+                if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                {
+                    maxFolder = raw.sqlite3_column_text(stmt, 0).utf8_to_string();
+                }
+                raw.sqlite3_reset(stmt);
+                cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " +
+                "b.SeqNumber, b.BookSize, b.BookID " + 
+                "from Books b " +
+                "where b.Folder = ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
+                if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK)
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                raw.sqlite3_bind_text(stmt, 1, maxFolder);
                 while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
                     var o = CreateBook(stmt);
