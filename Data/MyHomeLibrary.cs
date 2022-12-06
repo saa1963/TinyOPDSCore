@@ -386,8 +386,8 @@ namespace TinyOPDSCore.Data
         {
             sqlite3_stmt stmt = null;
             int rc = raw.sqlite3_prepare_v2(db,
-                "select Folder, FileName, Ext, UpdateDate, Annotation, Title, Lang, SeriesID, SeqNumber, BookSize, BookID " +
-                "from Books b where Folder = ? and FileName = ? and IsDeleted=0 and Lang='ru'", out stmt);
+                "select Folder, FileName, Ext, UpdateDate, Annotation, Title, Lang, s.SearchSeriesTitle, SeqNumber, BookSize, BookID " +
+                "from Books b left join Series s on b.SeriesID = s.SeriesID where Folder = ? and FileName = ? and IsDeleted=0 and Lang='ru'", out stmt);
             if (rc != raw.SQLITE_OK)
             {
                 throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
@@ -459,7 +459,8 @@ namespace TinyOPDSCore.Data
             string annotation = raw.sqlite3_column_text(stmt, 4).utf8_to_string();
             string title = raw.sqlite3_column_text(stmt, 5).utf8_to_string();
             string lang = raw.sqlite3_column_text(stmt, 6).utf8_to_string();
-            int seriesid = raw.sqlite3_column_int(stmt, 7);
+            string sequence = raw.sqlite3_column_text(stmt, 7).utf8_to_string();
+            //int seriesid = raw.sqlite3_column_int(stmt, 7);
             int seqnumber = raw.sqlite3_column_int(stmt, 8);
             int booksize = raw.sqlite3_column_int(stmt, 9);
             
@@ -473,10 +474,11 @@ namespace TinyOPDSCore.Data
             o.Language = lang;
             o.HasCover = false;
             o.DocumentDate = DateTime.MinValue;
-            if (seriesid != 0)
-                o.Sequence = seriesid.ToString();
-            else
-                o.Sequence = null;
+            o.Sequence = sequence;
+            //if (seriesid != 0)
+            //    o.Sequence = seriesid.ToString();
+            //else
+            //    o.Sequence = null;
             if (seqnumber != 0)
                 o.NumberInSequence = (uint)seqnumber;
             else
@@ -516,9 +518,10 @@ namespace TinyOPDSCore.Data
             sqlite3_stmt stmt = null;
             try
             {
-                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " + 
+                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, s.SearchSeriesTitle, " + 
                     "b.SeqNumber, b.BookSize, b.BookID " + 
                     "from Author_List al inner join Authors a on al.AuthorID = a.AuthorID inner join Books b on al.BookID = b.BookID " +
+                    "left join Series s on b.SeriesID = s.SeriesID " +
                     "where a.SearchName like ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                 raw.sqlite3_bind_text(stmt, 1, author + "%");
@@ -553,9 +556,10 @@ namespace TinyOPDSCore.Data
             sqlite3_stmt stmt = null;
             try
             {
-                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " +
+                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, s.SearchSeriesTitle, " +
                     "b.SeqNumber, b.BookSize, b.BookID " +
                     "from Genre_List gl inner join Books b on gl.BookID = b.BookID inner join Genres g on gl.GenreCode = g.GenreCode " +
+                    "left join Series s on b.SeriesID = s.SeriesID " +
                     "where g.fb2code = ? and b.IsDeleted = 0 and b.Lang='ru'";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) 
                     throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
@@ -608,7 +612,7 @@ namespace TinyOPDSCore.Data
             sqlite3_stmt stmt = null;
             try
             {
-                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " +
+                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, s.SearchSeriesTitle, " +
                     "b.SeqNumber, b.BookSize, b.BookID " +
                     "from Series s inner join Books b on s.SeriesID = b.SeriesID " +
                     "where s.SearchSeriesTitle = ? and b.IsDeleted = 0 and b.Lang='ru'";
@@ -637,8 +641,9 @@ namespace TinyOPDSCore.Data
             sqlite3_stmt stmt = null;
             try
             {
-                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " +
+                var cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, s.SearchSeriesTitle, " +
                     "b.SeqNumber, b.BookSize, b.BookID from Books b " +
+                    "left join Series s on b.SeriesID = s.SeriesID " +
                     "where b.SearchTitle like ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK)
                     throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
@@ -709,9 +714,10 @@ namespace TinyOPDSCore.Data
                     maxFolder = raw.sqlite3_column_text(stmt, 0).utf8_to_string();
                 }
                 raw.sqlite3_reset(stmt);
-                cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, b.SeriesID, " +
+                cSql = "select b.Folder, b.FileName, b.Ext, b.UpdateDate, b.Annotation, b.Title, b.Lang, s.SearchSeriesTitle, " +
                 "b.SeqNumber, b.BookSize, b.BookID " + 
                 "from Books b " +
+                "left join Series s on b.SeriesID = s.SeriesID " +
                 "where b.Folder = ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK)
                     throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
