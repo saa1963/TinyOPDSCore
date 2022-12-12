@@ -14,11 +14,12 @@ namespace TinyOPDSCore.Data
     {
         Object objectLock = new object();
         private sqlite3 db;
+        private ILogger<MyHomeLibrary> logger;
 
         public MyHomeLibrary()
         {
             var loggerFactory = new NLogLoggerFactory();
-            ILogger<MyHomeLibrary> logger = loggerFactory.CreateLogger<MyHomeLibrary>();
+            logger = loggerFactory.CreateLogger<MyHomeLibrary>();
 
             LibraryPath = Properties.LibraryPath;
             int rc;
@@ -498,7 +499,7 @@ namespace TinyOPDSCore.Data
                 {
                     throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                 }
-                raw.sqlite3_bind_text(stmt, 1, author + "%");
+                raw.sqlite3_bind_text(stmt, 1, author.ToUpper() + "%");
                 int count = 0;
                 if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
@@ -524,7 +525,7 @@ namespace TinyOPDSCore.Data
                     "left join Series s on b.SeriesID = s.SeriesID " +
                     "where a.SearchName like ? and b.IsDeleted = 0 and b.Lang='ru' order by b.BookID";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
-                raw.sqlite3_bind_text(stmt, 1, author + "%");
+                raw.sqlite3_bind_text(stmt, 1, author.ToUpper() + "%");
                 Book o = null;
                 while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
@@ -534,6 +535,7 @@ namespace TinyOPDSCore.Data
                     o.Genres.AddRange(ThisBookGenres(bookid));
                     lst.Add(o);
                 }
+                logger.LogInformation($"GetBooksByAuthors {lst.Count}");
                 return lst;
             }
             finally
@@ -592,7 +594,7 @@ namespace TinyOPDSCore.Data
                 {
                     throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                 }
-                raw.sqlite3_bind_text(stmt, 1, sequence + "%");
+                raw.sqlite3_bind_text(stmt, 1, sequence.ToUpper() + "%");
                 int count = 0;
                 if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
@@ -618,7 +620,7 @@ namespace TinyOPDSCore.Data
                     "where s.SearchSeriesTitle = ? and b.IsDeleted = 0 and b.Lang='ru'";
                 if (raw.sqlite3_prepare_v2(db, cSql, out stmt) != raw.SQLITE_OK) 
                     throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
-                raw.sqlite3_bind_text(stmt, 1, sequence);
+                raw.sqlite3_bind_text(stmt, 1, sequence.ToUpper());
                 while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                 {
                     var o = CreateBook(stmt);

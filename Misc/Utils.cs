@@ -145,7 +145,7 @@ namespace TinyOPDSCore
 
             // compute the hash of the name space ID concatenated with the name (step 4)
             byte[] hash = namespaceId.ToByteArray();
-            using (SHA256 algorithm = new SHA256Managed())
+            using (SHA256 algorithm = SHA256.Create())
             {
                 algorithm.TransformBlock(namespaceBytes, 0, namespaceBytes.Length, hash, 0);
                 algorithm.TransformFinalBlock(nameBytes, 0, nameBytes.Length);

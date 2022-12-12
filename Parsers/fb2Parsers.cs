@@ -63,7 +63,7 @@ namespace TinyOPDSCore.Parsers
                                     {
                                         xml = XDocument.Parse(this.SanitizeXmlString(xmlStr), LoadOptions.PreserveWhitespace);
                                     }
-                                    else throw e;
+                                    else throw;
                                 }
                             }
                         }
@@ -97,7 +97,7 @@ namespace TinyOPDSCore.Parsers
                                 xml = XDocument.Parse(this.SanitizeXmlString(xmlStr), LoadOptions.PreserveWhitespace);
                             }
                         }
-                        else throw e;
+                        else throw;
                     }
                 }
 
