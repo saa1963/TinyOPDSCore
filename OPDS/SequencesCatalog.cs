@@ -42,7 +42,7 @@ namespace TinyOPDSCore.OPDS
 
             // Get all sequence names starting with searchPattern
             List<string> Sequences = 
-                (from s in LibraryFactory.GetLibrary().Sequences where s.StartsWith(searchPattern) && s.Length > searchPattern.Length + 1 select s).ToList();
+                (from s in MyHomeLibrary.Instance.Sequences where s.StartsWith(searchPattern) && s.Length > searchPattern.Length + 1 select s).ToList();
 
             if (Sequences.Count > threshold)
             {
@@ -72,7 +72,7 @@ namespace TinyOPDSCore.OPDS
                 // Add catalog entries
                 foreach (string sequence in sequences)
                 {
-                    var seriesCount = LibraryFactory.GetLibrary().GetBooksBySequenceCount(sequence);
+                    var seriesCount = MyHomeLibrary.Instance.GetBooksBySequenceCount(sequence);
 
                     doc.Root.Add(
                         new XElement("entry",

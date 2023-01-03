@@ -56,6 +56,7 @@ namespace TinyOPDSCore.OPDS
 
         public XDocument Search(string searchPattern, string searchType = "", bool fb2Only = false, int pageNumber = 0, int threshold = 50)
         {
+            var mhl = MyHomeLibrary.Instance;
             if (!string.IsNullOrEmpty(searchPattern)) searchPattern = Uri.UnescapeDataString(searchPattern).Replace('+', ' ').ToLower();
 
             XDocument doc = new XDocument(
@@ -75,20 +76,20 @@ namespace TinyOPDSCore.OPDS
             if (string.IsNullOrEmpty(searchType))
             {
                 string transSearchPattern = Transliteration.Back(searchPattern, TransliterationType.GOST);
-                authors = LibraryFactory.GetLibrary().GetAuthorsByName(searchPattern, true);
+                authors = mhl.GetAuthorsByName(searchPattern, true);
                 if (authors.Count == 0 && !string.IsNullOrEmpty(transSearchPattern))
                 {
-                    authors = LibraryFactory.GetLibrary().GetAuthorsByName(transSearchPattern, true);
+                    authors = mhl.GetAuthorsByName(transSearchPattern, true);
                 }
-                titles = LibraryFactory.GetLibrary().GetBooksByTitle(searchPattern);
+                titles = mhl.GetBooksByTitle(searchPattern);
                 if (titles.Count == 0 && !string.IsNullOrEmpty(transSearchPattern))
                 {
-                    titles = LibraryFactory.GetLibrary().GetBooksByTitle(transSearchPattern);
+                    titles = mhl.GetBooksByTitle(transSearchPattern);
                 }
             }
             else if (searchType.Equals("recentbooks"))
             {
-                titles = LibraryFactory.GetLibrary().GetBooksRecent();
+                titles = mhl.GetBooksRecent();
             }
 
             if (string.IsNullOrEmpty(searchType) && authors.Count > 0 && titles.Count > 0)

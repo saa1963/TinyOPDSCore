@@ -94,6 +94,7 @@ namespace TinyOPDSCore.OPDS
         /// <returns></returns>
         private XDocument GetCatalog(string searchPattern, SearchFor searchFor, bool acceptFB2, int page, int threshold = 50)
         {
+            var mhl = MyHomeLibrary.Instance;
             if (!string.IsNullOrEmpty(searchPattern)) searchPattern = Uri.UnescapeDataString(searchPattern).Replace('+', ' ');
 
             XDocument doc = new XDocument(
@@ -125,33 +126,33 @@ namespace TinyOPDSCore.OPDS
             switch (searchFor)
             {
                 case SearchFor.Author:
-                    books = LibraryFactory.GetLibrary().GetBooksByAuthor(searchPattern);
+                    books = mhl.GetBooksByAuthor(searchPattern);
                     catalogType = "/author/" + Uri.EscapeDataString(searchPattern);
                     break;
                 case SearchFor.Sequence:
-                    books = LibraryFactory.GetLibrary().GetBooksBySequence(searchPattern);
+                    books = mhl.GetBooksBySequence(searchPattern);
                     catalogType = "/sequence/" + Uri.EscapeDataString(searchPattern);
                     break;
                 case SearchFor.Genre:
-                    books = LibraryFactory.GetLibrary().GetBooksByGenre(searchPattern);
+                    books = mhl.GetBooksByGenre(searchPattern);
                     catalogType = "/genre/" + Uri.EscapeDataString(searchPattern);
                     break;
                 case SearchFor.Title:
-                    books = LibraryFactory.GetLibrary().GetBooksByTitle(searchPattern);
+                    books = mhl.GetBooksByTitle(searchPattern);
                     // For search, also return books by 
                     if (threshold > 50)
                     {
                         string translit = Transliteration.Back(searchPattern, TransliterationType.GOST);
                         if (!string.IsNullOrEmpty(translit))
                         {
-                            List<Book> transTitles = LibraryFactory.GetLibrary().GetBooksByTitle(translit);
+                            List<Book> transTitles = mhl.GetBooksByTitle(translit);
                             if (transTitles.Count > 0) books.AddRange(transTitles);
                         }
                     }
                     break;
                 case SearchFor.Recent:
                     catalogType = "/recentbooks/";
-                    books = LibraryFactory.GetLibrary().GetBooksRecent();
+                    books = mhl.GetBooksRecent();
                     break;
             }
 
@@ -192,7 +193,7 @@ namespace TinyOPDSCore.OPDS
 
             bool useCyrillic = Localizer.Language.Equals("ru");
 
-            List<Genre> genres = LibraryFactory.GetLibrary().Genres;
+            List<Genre> genres = mhl.Genres;
 
             // Add catalog entries
             for (int i = startIndex; i < endIndex; i++)

@@ -52,7 +52,7 @@ namespace TinyOPDSCore.OPDS
                               new XElement("updated", DateTime.UtcNow.ToUniversalTime()),
                               new XElement("id", "tag:root:recentbooks"),
                               new XElement("title", Localizer.Text("Recent books"), new XAttribute("type", "text")),
-                              new XElement("content", string.Format(Localizer.Text("Recent {0} books to library"), LibraryFactory.GetLibrary().GetBooksRecentCount()), new XAttribute("type", "text")),
+                              new XElement("content", string.Format(Localizer.Text("Recent {0} books to library"), MyHomeLibrary.Instance.GetBooksRecentCount()), new XAttribute("type", "text")),
                               new XElement("link", new XAttribute("href", "/recentbooks"), new XAttribute("type", "application/atom+xml;profile=opds-catalog"))
                               ),
                           // Add catalog entries
@@ -60,14 +60,14 @@ namespace TinyOPDSCore.OPDS
                               new XElement("updated", DateTime.UtcNow.ToUniversalTime()),
                               new XElement("id", "tag:root:authors"),
                               new XElement("title", Localizer.Text("By authors"), new XAttribute("type", "text")),
-                              new XElement("content", string.Format(Localizer.Text("{0} books by {1} authors"), LibraryFactory.GetLibrary().Count, LibraryFactory.GetLibrary().Authors.Count), new XAttribute("type", "text")),
+                              new XElement("content", string.Format(Localizer.Text("{0} books by {1} authors"), MyHomeLibrary.Instance.Count, MyHomeLibrary.Instance.Authors.Count), new XAttribute("type", "text")),
                               new XElement("link", new XAttribute("href", "/authorsindex"), new XAttribute("type", "application/atom+xml;profile=opds-catalog"))
                               ),
                           new XElement("entry",
                               new XElement("updated", DateTime.UtcNow.ToUniversalTime()),
                               new XElement("id", "tag:root:sequences"),
                               new XElement("title", Localizer.Text("By series"), new XAttribute("type", "text")),
-                              new XElement("content", string.Format(Localizer.Text("{0} books by {1} series"), LibraryFactory.GetLibrary().Count, LibraryFactory.GetLibrary().Sequences.Count), new XAttribute("type", "text")),
+                              new XElement("content", string.Format(Localizer.Text("{0} books by {1} series"), MyHomeLibrary.Instance.Count, MyHomeLibrary.Instance.Sequences.Count), new XAttribute("type", "text")),
                               new XElement("link", new XAttribute("href", "/sequencesindex"), new XAttribute("type", "application/atom+xml;profile=opds-catalog"))
                               ),
                           new XElement("entry",

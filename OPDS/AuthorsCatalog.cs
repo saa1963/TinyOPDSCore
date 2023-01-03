@@ -34,6 +34,7 @@ namespace TinyOPDSCore.OPDS
         /// <returns></returns>
         public XDocument GetCatalog(string searchPattern, bool isOpenSearch = false, int threshold = 50)
         {
+            var mhl = MyHomeLibrary.Instance;
             if (!string.IsNullOrEmpty(searchPattern)) searchPattern = Uri.UnescapeDataString(searchPattern).Replace('+', ' ').ToLower();
 
             XDocument doc = new XDocument(
@@ -47,7 +48,7 @@ namespace TinyOPDSCore.OPDS
                 );
 
             // Get all authors names starting with searchPattern
-            List<string> Authors = LibraryFactory.GetLibrary().GetAuthorsByName(searchPattern, isOpenSearch);
+            List<string> Authors = mhl.GetAuthorsByName(searchPattern, isOpenSearch);
 
             // For search, also check transliterated names
             if (isOpenSearch)
@@ -56,7 +57,7 @@ namespace TinyOPDSCore.OPDS
                 string translit = Transliteration.Back(searchPattern, TransliterationType.GOST);
                 if (!string.IsNullOrEmpty(translit))
                 {
-                    List<string> transAuthors = LibraryFactory.GetLibrary().GetAuthorsByName(translit, isOpenSearch);
+                    List<string> transAuthors = mhl.GetAuthorsByName(translit, isOpenSearch);
                     if (transAuthors.Count > 0) Authors.AddRange(transAuthors);
                 }
             }
@@ -93,7 +94,7 @@ namespace TinyOPDSCore.OPDS
                 // Add catalog entries
                 foreach (string author in Authors)
                 {
-                    var booksCount = LibraryFactory.GetLibrary().GetBooksByAuthorCount(author);
+                    var booksCount = mhl.GetBooksByAuthorCount(author);
 
                     doc.Root.Add(
                         new XElement("entry",

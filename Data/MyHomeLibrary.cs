@@ -18,11 +18,27 @@ namespace TinyOPDSCore.Data
         public string SeriesTitle { get; set; }
         public string SearchSeriesTitle { get; set; }
     }
-    public class MyHomeLibrary : ILibrary
+    public class MyHomeLibrary
     {
-        Object objectLock = new object();
+        static Object objectLock = new object();
         public sqlite3 db;
         private ILogger<MyHomeLibrary> logger;
+
+        private static MyHomeLibrary mhl = null;
+        public static MyHomeLibrary Instance
+        {
+            get
+            {
+                lock (objectLock)
+                {
+                    if (mhl == null)
+                    {
+                        mhl = new MyHomeLibrary();
+                    }
+                }
+                return mhl;
+            }
+        }
 
         public MyHomeLibrary()
         {

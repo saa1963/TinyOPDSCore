@@ -107,7 +107,7 @@ namespace TinyOPDSCore.Controllers
                 MemoryStream memStream = null;
                 memStream = new MemoryStream();
 
-                Book book = LibraryFactory.GetLibrary().GetBook(fname);
+                Book book = MyHomeLibrary.Instance.GetBook(fname);
 
                 if (book.FilePath.ToLower().Contains(".zip@"))
                 {

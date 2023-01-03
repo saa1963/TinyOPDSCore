@@ -23,7 +23,7 @@ namespace TinyOPDSCore.Data
         {
             Version = 1;
             FileName = fileName;
-            var lib = LibraryFactory.GetLibrary();
+            var lib = MyHomeLibrary.Instance;
             if (!string.IsNullOrEmpty(FileName) && FileName.IndexOf(lib.LibraryPath) == 0)
             {
                 FileName = FileName.Substring(lib.LibraryPath.Length + 1);
@@ -50,7 +50,7 @@ namespace TinyOPDSCore.Data
         }
         public float Version { get; set; }
         public string FileName { get; private set; }
-        public string FilePath { get { return Path.Combine(LibraryFactory.GetLibrary().LibraryPath, FileName); } }
+        public string FilePath { get { return Path.Combine(MyHomeLibrary.Instance.LibraryPath, FileName); } }
         public string Title { get; set; }
         public string Language { get; set; }
         public bool HasCover { get; set; }

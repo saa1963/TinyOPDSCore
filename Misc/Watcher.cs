@@ -30,7 +30,7 @@ namespace TinyOPDSCore.Misc
 
         public void ProcessZip(string zipName, string fullpath)
         {
-            var lib = new MyHomeLibrary();//LibraryFactory.GetLibrary();
+            var lib = MyHomeLibrary.Instance;//LibraryFactory.GetLibrary();
             var fb2Parser = new FB2Parser();
             bool ai = true;
             int cnt = 0;
