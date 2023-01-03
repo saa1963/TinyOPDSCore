@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
+using TinyOPDSCore.Misc;
 
 namespace TinyOPDSCore
 {
@@ -25,6 +27,7 @@ namespace TinyOPDSCore
             Properties.config = configuration;
             Localizer.Init();
             Localizer.SetLanguage(Properties.Language);
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         }
 
         public IConfiguration Configuration { get; }
@@ -42,6 +45,21 @@ namespace TinyOPDSCore
                                             .AllowAnyHeader()
                                             .AllowAnyMethod();
                     });
+            });
+            var watcher = new Watcher(Configuration["LibraryPath"]);
+            services.AddSingleton(typeof(Watcher), watcher);
+            var task = Task.Run(() =>
+            {
+                while (true)
+                {
+                    (string, string) queue;
+                    while (!watcher.ZipQueues.TryDequeue(out queue))
+                    {
+                        Task.Delay(1000);
+                    }
+                    var (zipFile, fullPath) = queue;
+                    watcher.ProcessZip(zipFile, fullPath);
+                }
             });
         }
 

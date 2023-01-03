@@ -35,5 +35,6 @@ namespace TinyOPDSCore.Data
         void Load();
         void Save();
         void Append(Book book);
+        void Add2(Book book, int insideNo);
     }
 }

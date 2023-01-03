@@ -398,6 +398,8 @@ namespace TinyOPDSCore.Data
             lock (_books) return _books.Values.Where(b => b.Genres.Contains(genre)).ToList();
         }
 
+        public void Add2(Book book, int insideNo) { throw new NotImplementedException(); }
+
         #region Serialization and deserialization
 
         /// <summary>
