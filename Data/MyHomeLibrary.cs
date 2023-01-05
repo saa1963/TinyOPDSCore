@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using System.Text.RegularExpressions;
 using TinyOPDSCore.Misc;
+using System.Collections.Concurrent;
 
 namespace TinyOPDSCore.Data
 {
@@ -20,8 +21,10 @@ namespace TinyOPDSCore.Data
     }
     public class MyHomeLibrary
     {
+        private const string SEQUENCES = "Sequences";
+        private const string SEQUENCESREC = "SequencesRec";
         static Object objectLock = new object();
-        public sqlite3 db;
+        private sqlite3 db;
         private ILogger<MyHomeLibrary> logger;
 
         private static MyHomeLibrary mhl = null;
@@ -40,7 +43,7 @@ namespace TinyOPDSCore.Data
             }
         }
 
-        public MyHomeLibrary()
+        internal MyHomeLibrary()
         {
             var loggerFactory = new NLogLoggerFactory();
             logger = loggerFactory.CreateLogger<MyHomeLibrary>();
@@ -164,112 +167,48 @@ namespace TinyOPDSCore.Data
             }
         }
 
+        public void BeginTransaction()
+        {
+            raw.sqlite3_exec(db, "BEGIN TRANSACTION;");
+        }
+
+        public void EndTransaction()
+        {
+            raw.sqlite3_exec(db, "END TRANSACTION;");
+        }
+
+        public void RollbackTransaction()
+        {
+            raw.sqlite3_exec(db, "ROLLBACK TRANSACTION;");
+        }
+
         public string LibraryPath { get; set; }
-        public bool IsChanged { get; set; }
+        private Dictionary<string, object> cacheValues= new Dictionary<string, object>();
 
         public int Count
         {
             get
             {
-                sqlite3_stmt stmt = null;
-                try
+                if (!cacheValues.ContainsKey("BookCount") || cacheValues["BookCount"] == null)
                 {
-                    int rc;
-                    rc = raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where IsDeleted=0 and Lang='ru'", out stmt);
-                    if (rc != raw.SQLITE_OK)
-                    {
-                        throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
-                    }
-                    int count = 0;
-                    if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
-                    {
-
-                        count = raw.sqlite3_column_int(stmt, 0);
-                    }
-                    return count;
-                }
-                finally
-                {
-                    raw.sqlite3_finalize(stmt);
-                }
-            }
-        }
-
-        public int FB2Count
-        {
-            get
-            {
-                sqlite3_stmt stmt = null;
-                try
-                {
-                    if (raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where SearchExt = '.FB2' and IsDeleted=0 and Lang='ru'", out stmt) 
-                        != raw.SQLITE_OK)
-                    {
-                        throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
-                    }
-                    int count = 0;
-                    if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
-                    {
-                        count = raw.sqlite3_column_int(stmt, 0);
-                    }
-                    return count;
-                }
-                finally
-                {
-                    raw.sqlite3_finalize(stmt);
-                }
-            }
-        }
-
-        public int EPUBCount
-        {
-            get
-            {
-                sqlite3_stmt stmt = null;
-                try
-                {
-                    int rc;
-                    rc = raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where SearchExt = '.EPUB' and IsDeleted=0 and Lang='ru'", out stmt);
-                    if (rc != raw.SQLITE_OK)
-                    {
-                        throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
-                    }
-                    int count = 0;
-                    if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
-                    {
-
-                        count = raw.sqlite3_column_int(stmt, 0);
-                    }
-                    return count;
-                }
-                finally
-                {
-                    raw.sqlite3_finalize(stmt);
-                }
-            }
-        }
-
-        private List<string> _titles = null;
-        public List<string> Titles
-        {
-            get
-            {
-                if (_titles == null)
-                {
-                    _titles = new List<string>();
                     sqlite3_stmt stmt = null;
                     try
                     {
                         int rc;
-                        rc = raw.sqlite3_prepare_v2(db, "select distinct Title from Books order by Title and IsDeleted=0 and Lang='ru'", out stmt);
+                        rc = raw.sqlite3_prepare_v2(db, "select count(BookID) from Books where IsDeleted=0 and Lang='ru'", out stmt);
                         if (rc != raw.SQLITE_OK)
                         {
                             throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
                         }
-                        while (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
+                        int count = 0;
+                        if (raw.sqlite3_step(stmt) == raw.SQLITE_ROW)
                         {
-                            var txt = raw.sqlite3_column_text(stmt, 0);
-                            _authors.Add(txt.utf8_to_string());
+
+                            count = raw.sqlite3_column_int(stmt, 0);
+                        }
+                        if (!cacheValues.TryAdd("BookCount", count))
+                        {
+                            cacheValues["BookCount"] = count;
                         }
                     }
                     finally
@@ -277,18 +216,17 @@ namespace TinyOPDSCore.Data
                         raw.sqlite3_finalize(stmt);
                     }
                 }
-                return _titles;
+                return (int)cacheValues["BookCount"];
             }
         }
 
-        private List<string> _authors = null;
         public List<string> Authors
         {
             get
             {
-                if (_authors == null)
+                if (!cacheValues.ContainsKey("Authors") || cacheValues["Authors"] == null)
                 {
-                    _authors = new List<string>();
+                    var _authors = new List<string>();
                     sqlite3_stmt stmt = null;
                     try
                     {
@@ -303,18 +241,22 @@ namespace TinyOPDSCore.Data
                             var txt = raw.sqlite3_column_text(stmt, 0);
                             _authors.Add(txt.utf8_to_string());
                         }
+                        if (!cacheValues.TryAdd("Authors", _authors))
+                        {
+                            cacheValues["Authors"] = _authors;
+                        }
                     }
                     finally
                     {
                         raw.sqlite3_finalize(stmt);
                     }
                 }
-                return _authors;
+                return (List<string>)cacheValues["Authors"];
             }
         }
         private void FillSequence()
         {
-            _sequences = new List<SequenceRec>();
+            var _sequences = new List<SequenceRec>();
             sqlite3_stmt stmt = null;
             try
             {
@@ -338,39 +280,46 @@ namespace TinyOPDSCore.Data
                     };
                     _sequences.Add(sequenceRec);
                 }
+                if (!cacheValues.TryAdd(SEQUENCES, _sequences))
+                {
+                    cacheValues[SEQUENCES] = _sequences.Select(a => a.SearchSeriesTitle).ToList();
+                }
+                if (!cacheValues.TryAdd(SEQUENCESREC, _sequences))
+                {
+                    cacheValues[SEQUENCESREC] = _sequences;
+                }
             }
             finally
             {
                 raw.sqlite3_finalize(stmt);
             }
         }
-        private List<SequenceRec> _sequences = null;
         public List<string> Sequences
         {
             get
             {
-                if (_sequences == null)
+                if (!cacheValues.ContainsKey(SEQUENCES) || cacheValues[SEQUENCES] == null)
                 {
                     FillSequence();
                 }
-                return _sequences.Select(a => a.SearchSeriesTitle).ToList();
+                return (List<string>)cacheValues[SEQUENCES];
             }
         }
         internal List<SequenceRec> SequencesRec
         {
             get
             {
-                if (_sequences == null)
+                if (!cacheValues.ContainsKey(SEQUENCESREC) || cacheValues[SEQUENCESREC] == null)
                 {
                     FillSequence();
                 }
-                return _sequences;
+                return (List<SequenceRec>)cacheValues[SEQUENCESREC];
             }
         }
-        private List<Genre> _genres = null;
         private void FillGenres()
         {
-            _genres = new List<Genre>();
+            var _genres = new List<Genre>();
+            
             sqlite3_stmt stmt = null;
             if (raw.sqlite3_prepare_v2(db,
                 "select GenreAlias, GenreCode from Genres where ParentCode = '0' order by GenreCode", out stmt) != raw.SQLITE_OK)
@@ -404,37 +353,21 @@ namespace TinyOPDSCore.Data
                 raw.sqlite3_finalize(stmt1);
                 _genres.Add(g);
             }
+            if (!cacheValues.TryAdd("FB2Genres", _genres))
+            {
+                cacheValues["FB2Genres"] = _genres;
+            }
             raw.sqlite3_finalize(stmt);
         }
         public List<Genre> FB2Genres
         {
             get
             {
-                if (_genres == null)
+                if (!cacheValues.ContainsKey("FB2Genres") || cacheValues["FB2Genres"] == null)
                 {
                     FillGenres();
                 }
-                return _genres;
-            }
-        }
-
-        private Dictionary<string, string> _soundexedGenres = null;
-        public Dictionary<string, string> SoundexedGenres
-        {
-            get
-            {
-                if (_soundexedGenres == null)
-                {
-                    _soundexedGenres = new Dictionary<string, string>();
-                    foreach (Genre genre in FB2Genres)
-                        foreach (Genre subgenre in genre.Subgenres)
-                        {
-                            _soundexedGenres[subgenre.Name.SoundexByWord()] = subgenre.Tag;
-                            string reversed = string.Join(" ", subgenre.Name.Split(' ', ',').Reverse()).Trim();
-                            _soundexedGenres[reversed.SoundexByWord()] = subgenre.Tag;
-                        }
-                }
-                return _soundexedGenres;
+                return (List<Genre>)cacheValues["FB2Genres"];
             }
         }
 
@@ -442,14 +375,18 @@ namespace TinyOPDSCore.Data
         {
             get
             {
-                //return FB2Genres.SelectMany(g => g.Subgenres).OrderBy(s => s.Translation).ToList();
-                return FB2Genres.SelectMany(g => g.Subgenres).OrderBy(s => s.Translation).ToList();
+                if (!cacheValues.ContainsKey("Genres") || cacheValues["Genres"] == null)
+                {
+                    var _genres = FB2Genres.SelectMany(g => g.Subgenres).OrderBy(s => s.Translation).ToList();
+                    if (!cacheValues.TryAdd("Genres", _genres))
+                    {
+                        cacheValues["Genres"] = _genres;
+                    }
+                }
+                return (List<Genre>)cacheValues["Genres"];
             }
         }
 
-#pragma warning disable CS0067
-        public event EventHandler LibraryLoaded;
-#pragma warning restore CS0067
         internal int? ExistsAuthor(string author)
         {
             int? rt = null;
@@ -568,7 +505,10 @@ namespace TinyOPDSCore.Data
             raw.sqlite3_finalize(stmt);
             return rt;
         }
-        public bool Add(Book book) { throw new NotImplementedException(); }
+        public void ResetCache()
+        {
+            cacheValues.Clear();
+        }
         public void Add2(Book book, int insideNo )
         {
             
@@ -717,21 +657,6 @@ namespace TinyOPDSCore.Data
                 raw.sqlite3_reset(stmt) ;
             }
             raw.sqlite3_finalize(stmt);
-        }
-
-        public void Append(Book book)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Contains(string bookPath)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Delete(string fileName)
-        {
-            throw new NotImplementedException();
         }
 
         public List<string> GetAuthorsByName(string name, bool isOpenSearch)
@@ -1105,21 +1030,6 @@ namespace TinyOPDSCore.Data
                 raw.sqlite3_finalize(stmt);
             }
             return lst;
-        }
-
-        public void Load()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void LoadAsync()
-        {
-            return;
-        }
-
-        public void Save()
-        {
-            return;
         }
     }
 }

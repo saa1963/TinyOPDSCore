@@ -40,7 +40,7 @@ namespace TinyOPDSCore.Misc
                 {
                     using ZipArchive zipArchive = ZipFile.OpenRead(fullpath);
                     int insideNo = 0;
-                    raw.sqlite3_exec(lib.db, "BEGIN TRANSACTION;");
+                    lib.BeginTransaction();
                     foreach (var entry in zipArchive.Entries)
                     {
                         var memStream = new MemoryStream();
@@ -49,7 +49,8 @@ namespace TinyOPDSCore.Misc
                         lib.Add2(book, insideNo);
                         insideNo++;
                     }
-                    raw.sqlite3_exec(lib.db, "END TRANSACTION;");
+                    lib.EndTransaction();
+                    lib.ResetCache();
                     logger.LogInformation($"{zipName} добавлено {insideNo} книг.");
                     ai = false;
                 }
