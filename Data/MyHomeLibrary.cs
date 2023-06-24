@@ -280,9 +280,10 @@ namespace TinyOPDSCore.Data
                     };
                     _sequences.Add(sequenceRec);
                 }
-                if (!cacheValues.TryAdd(SEQUENCES, _sequences))
+                var _seq = _sequences.Select(a => a.SearchSeriesTitle).ToList();
+                if (!cacheValues.TryAdd(SEQUENCES, _seq))
                 {
-                    cacheValues[SEQUENCES] = _sequences.Select(a => a.SearchSeriesTitle).ToList();
+                    cacheValues[SEQUENCES] = _seq;
                 }
                 if (!cacheValues.TryAdd(SEQUENCESREC, _sequences))
                 {

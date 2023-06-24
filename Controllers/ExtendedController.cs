@@ -22,6 +22,7 @@ namespace TinyOPDSCore.Controllers
         [HttpGet("")]
         public IActionResult Index()
         {
+            
             string xml = new RootCatalog().Catalog.ToString();
             xml = getHeader(xml);
             return OPDSResult(xml);
