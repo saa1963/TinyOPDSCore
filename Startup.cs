@@ -48,17 +48,17 @@ namespace TinyOPDSCore
             });
             var watcher = new Watcher(Configuration["LibraryPath"]);
             services.AddSingleton(typeof(Watcher), watcher);
-            var task = Task.Run(() =>
+            var task = Task.Run(async () =>
             {
                 while (true)
                 {
                     (string, string) queue;
                     while (!watcher.ZipQueues.TryDequeue(out queue))
                     {
-                        Task.Delay(1000);
+                        await Task.Delay(1000);
                     }
                     var (zipFile, fullPath) = queue;
-                    watcher.ProcessZip(zipFile, fullPath);
+                    await watcher.ProcessZipAsync(zipFile, fullPath);
                 }
             });
         }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Threading;
+using System.Threading.Tasks;
 using TinyOPDSCore.Data;
 using TinyOPDSCore.Parsers;
 
@@ -28,7 +29,7 @@ namespace TinyOPDSCore.Misc
             logger.LogInformation($"Watcher {path}");
         }
 
-        public void ProcessZip(string zipName, string fullpath)
+        public async Task ProcessZipAsync(string zipName, string fullpath)
         {
             var lib = MyHomeLibrary.Instance;//LibraryFactory.GetLibrary();
             var fb2Parser = new FB2Parser();
@@ -56,7 +57,7 @@ namespace TinyOPDSCore.Misc
                 }
                 catch (IOException)
                 {
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000);
                     cnt++;
                 }
             }
