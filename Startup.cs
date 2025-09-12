@@ -21,6 +21,7 @@ namespace TinyOPDSCore
 {
     public class Startup
     {
+        private ILogger<Startup> logger;
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -28,6 +29,9 @@ namespace TinyOPDSCore
             Localizer.Init();
             Localizer.SetLanguage(Properties.Language);
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            var loggerFactory = new NLogLoggerFactory();
+            logger = loggerFactory.CreateLogger<Startup>();
         }
 
         public IConfiguration Configuration { get; }
@@ -46,22 +50,37 @@ namespace TinyOPDSCore
                                             .AllowAnyMethod();
                     });
             });
-            var watcher = new Watcher(Configuration["LibraryPath"]);
-            services.AddSingleton(typeof(Watcher), watcher);
-            var task = Task.Run(async () =>
-            {
-                while (true)
-                {
-                    (string, string) queue;
-                    while (!watcher.ZipQueues.TryDequeue(out queue))
-                    {
-                        await Task.Delay(1000);
-                    }
-                    var (zipFile, fullPath) = queue;
-                    await watcher.ProcessZipAsync(zipFile, fullPath);
-                }
-            });
+            //var watcher = new Watcher(Configuration["LibraryPath"]);
+            //services.AddSingleton(typeof(Watcher), watcher);
+            //var task = Task.Run(async () =>
+            //{
+            //    while (true)
+            //    {
+            //        (string, string) queue;
+            //        while (!watcher.ZipQueues.TryDequeue(out queue))
+            //        {
+            //            await Task.Delay(1000);
+            //        }
+            //        var (zipFile, fullPath) = queue;
+            //        await watcher.ProcessZipAsync(zipFile, fullPath);
+            //    }
+            //});
+            var watcher2 = new Watcher2();
+            services.AddSingleton(watcher2);
+            watcher2.StartAsync(new System.Threading.CancellationToken());
+            var fsw = new FileSystemWatcher(Configuration["LibraryPath"]);
+            fsw.Filter = "fb2-??????-??????.zip";
+            fsw.Created += watcher2.Fsw_Created;
+            fsw.EnableRaisingEvents = true;
+            services.AddSingleton(fsw);
         }
+
+        //private void Fsw_Created(object sender, FileSystemEventArgs e)
+        //{
+        //    //ZipQueues.Enqueue(new(e.Name, e.FullPath));
+        //    
+        //    logger.LogInformation("Watcher2 - " + e.Name + "; " + e.FullPath);
+        //}
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)

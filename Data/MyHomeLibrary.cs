@@ -628,6 +628,7 @@ namespace TinyOPDSCore.Data
             }
             foreach (var genre in genreList)
             {
+                logger.LogDebug($"bookId={bookId}, genre={genre}");
                 raw.sqlite3_bind_text(stmt, 1, genre);
                 raw.sqlite3_bind_int(stmt, 2, bookId);
                 if (raw.sqlite3_step(stmt) != raw.SQLITE_DONE)
