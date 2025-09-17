@@ -32,6 +32,7 @@ namespace TinyOPDSCore
 
             var loggerFactory = new NLogLoggerFactory();
             logger = loggerFactory.CreateLogger<Startup>();
+            logger.LogInformation("Startup исполнен.");
         }
 
         public IConfiguration Configuration { get; }
@@ -73,6 +74,7 @@ namespace TinyOPDSCore
             fsw.Created += watcher2.Fsw_Created;
             fsw.EnableRaisingEvents = true;
             services.AddSingleton(fsw);
+            //logger.LogInformation("ConfigureServices исполнен.");
         }
 
         //private void Fsw_Created(object sender, FileSystemEventArgs e)

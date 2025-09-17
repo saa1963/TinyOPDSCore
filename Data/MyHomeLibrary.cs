@@ -466,7 +466,7 @@ namespace TinyOPDSCore.Data
             raw.sqlite3_finalize(stmt);
             return rt;
         }
-        internal int AddSequence(string seq)
+        internal int? AddSequence(string seq)
         {
             var sql = "INSERT INTO Series (SeriesTitle, SearchSeriesTitle) VALUES (?, ?)";
             sqlite3_stmt stmt = null;
@@ -478,7 +478,10 @@ namespace TinyOPDSCore.Data
             raw.sqlite3_bind_text(stmt, 2, seq.ToUpper());
             if (raw.sqlite3_step(stmt) != raw.SQLITE_DONE)
             {
-                throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                if (raw.sqlite3_errcode(db) != 19)
+                    throw new Exception(raw.sqlite3_errmsg(db).utf8_to_string());
+                else
+                    return null;
             }
             raw.sqlite3_finalize(stmt);
             int rt = last_insert_rowid();
@@ -545,6 +548,7 @@ namespace TinyOPDSCore.Data
                 var authID = InsertAuthorIfMissing(author);
                 authorList.Add(authID);
             }
+            authorList = authorList.Distinct().ToList();
 
             int? seq = null;
             int? seqNumber = null;
@@ -571,6 +575,7 @@ namespace TinyOPDSCore.Data
                     genreList.Add(genreCode);
                 }
             }
+            genreList = genreList.Distinct().ToList();
 
             sqlite3_stmt stmt = null;
             if (raw.sqlite3_prepare_v2(db, sql, out stmt) != raw.SQLITE_OK)

@@ -41,6 +41,7 @@ namespace TinyOPDSCore.Misc
 
         private void DoWork(object? state)
         {
+            _logger.LogInformation("DoWork работает");
             var lib = MyHomeLibrary.Instance;//LibraryFactory.GetLibrary();
             var fb2Parser = new FB2Parser();
 
