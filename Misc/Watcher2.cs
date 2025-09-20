@@ -1,11 +1,15 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NLog;
 using NLog.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using TinyOPDSCore.Data;
@@ -18,15 +22,17 @@ namespace TinyOPDSCore.Misc
         //private int executionCount = 0;
         private readonly ILogger<Watcher2> _logger;
         private Timer? _timer = null;
-        //private readonly IConfiguration _configuration;
+        private readonly IConfiguration _configuration;
+        private readonly IWebHostEnvironment _env;
 
         public ConcurrentQueue<(string, string)> ZipQueues = new ConcurrentQueue<(string, string)>();
 
-        public Watcher2()
+        public Watcher2(IConfiguration configuration, IWebHostEnvironment env)
         {
             var loggerFactory = new NLogLoggerFactory();
             _logger = loggerFactory.CreateLogger<Watcher2>();
-            //_configuration = conf;
+            _configuration = configuration;
+            _env = env;
         }
 
         public Task StartAsync(CancellationToken stoppingToken)
@@ -42,7 +48,12 @@ namespace TinyOPDSCore.Misc
         private void DoWork(object? state)
         {
             _logger.LogInformation("DoWork работает");
-            var lib = MyHomeLibrary.Instance;//LibraryFactory.GetLibrary();
+            // Есть новые zip файлы - добавляем в очередь на обработку.
+            foreach (var item in CheckNewItems())
+            {
+                ZipQueues.Enqueue(item);
+            }
+            var lib = MyHomeLibrary.Instance;
             var fb2Parser = new FB2Parser();
 
             if (ZipQueues.Count > 0)
@@ -78,6 +89,30 @@ namespace TinyOPDSCore.Misc
                     }
                 }
             }
+        }
+
+        private IEnumerable<(string, string)> CheckNewItems()
+        {
+            string path = _configuration["LibraryPath"];
+            string path2 = Path.Combine(_env.WebRootPath, "listf.txt");
+            var rt = new List<(string, string)>();
+            // файлы в папке
+            var curFiles = System.IO.Directory.GetFiles(path, "fb2-*.zip")
+                .Select(x => Path.GetFileName(x));
+            // файлы в сохраненном списке
+            if (File.Exists(path2))
+            {
+                var saveFiles = File.ReadAllLines(path2);
+                foreach(var item in curFiles.Except(saveFiles))
+                {
+                    rt.Add((item, Path.Combine(path, item)));
+                }
+            }
+            else
+            {
+                _logger.LogInformation($"Отсутствует файл {path2}. Обновление библиотеки невозможно.");
+            }
+            return rt;
         }
 
         public Task StopAsync(CancellationToken stoppingToken)
