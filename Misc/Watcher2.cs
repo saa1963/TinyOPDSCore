@@ -7,6 +7,7 @@ using NLog.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -76,6 +77,7 @@ namespace TinyOPDSCore.Misc
                         }
                         lib.EndTransaction();
                         lib.ResetCache();
+                        UpdateListOfFiles();
                         _logger.LogInformation($"{zipName} добавлено {insideNo} книг.");
                     }
                     catch (Exception ex)
@@ -89,6 +91,15 @@ namespace TinyOPDSCore.Misc
                     }
                 }
             }
+        }
+
+        private void UpdateListOfFiles()
+        {
+            string path = _configuration["LibraryPath"];
+            string path2 = Path.Combine(_env.WebRootPath, "listf.txt");
+            var curFiles = System.IO.Directory.GetFiles(path, "fb2-*.zip")
+                .Select(x => Path.GetFileName(x));
+            File.WriteAllLines(path2, curFiles);
         }
 
         private IEnumerable<(string, string)> CheckNewItems()
