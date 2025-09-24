@@ -41,7 +41,9 @@ namespace TinyOPDSCore.Misc
             _logger.LogInformation("Timed Hosted Service running.");
 
             _timer = new Timer(DoWork, null, TimeSpan.Zero,
+                //TimeSpan.FromMinutes(int.Parse(_configuration["CheckNewMinutes"])));
                 TimeSpan.FromMinutes(5));
+            //TimeSpan.FromSeconds(5));
 
             return Task.CompletedTask;
         }
@@ -91,12 +93,16 @@ namespace TinyOPDSCore.Misc
                     }
                 }
             }
+            else
+            {
+                _logger.LogInformation("Нет новых поступлений.");
+            }
         }
 
         private void UpdateListOfFiles()
         {
             string path = _configuration["LibraryPath"];
-            string path2 = Path.Combine(_env.WebRootPath, "listf.txt");
+            string path2 = Path.Combine(_env.ContentRootPath, "listf.txt");
             var curFiles = System.IO.Directory.GetFiles(path, "fb2-*.zip")
                 .Select(x => Path.GetFileName(x));
             File.WriteAllLines(path2, curFiles);
@@ -105,7 +111,7 @@ namespace TinyOPDSCore.Misc
         private IEnumerable<(string, string)> CheckNewItems()
         {
             string path = _configuration["LibraryPath"];
-            string path2 = Path.Combine(_env.WebRootPath, "listf.txt");
+            string path2 = Path.Combine(_env.ContentRootPath, "listf.txt");
             var rt = new List<(string, string)>();
             // файлы в папке
             var curFiles = System.IO.Directory.GetFiles(path, "fb2-*.zip")

@@ -51,7 +51,8 @@ namespace TinyOPDSCore
                                             .AllowAnyMethod();
                     });
             });
-            services.AddSingleton(typeof(Watcher2));
+            //services.AddSingleton(typeof(Watcher2));
+            services.AddHostedService<Watcher2>();
         }
 
         //private void Fsw_Created(object sender, FileSystemEventArgs e)
@@ -64,7 +65,7 @@ namespace TinyOPDSCore
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
-            app.UseResponseRewind();
+            //app.UseResponseRewind();
 
             if (env.IsDevelopment())
             {
