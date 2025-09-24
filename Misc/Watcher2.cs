@@ -38,19 +38,17 @@ namespace TinyOPDSCore.Misc
 
         public Task StartAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Timed Hosted Service running.");
+            _logger.LogTrace("Timed Hosted Service running.");
 
             _timer = new Timer(DoWork, null, TimeSpan.Zero,
-                //TimeSpan.FromMinutes(int.Parse(_configuration["CheckNewMinutes"])));
-                TimeSpan.FromMinutes(5));
-            //TimeSpan.FromSeconds(5));
+            TimeSpan.FromMinutes(_configuration.GetValue<int>("CheckNewMinutes")));
 
             return Task.CompletedTask;
         }
 
         private void DoWork(object? state)
         {
-            _logger.LogInformation("DoWork работает");
+            _logger.LogTrace("DoWork работает");
             // Есть новые zip файлы - добавляем в очередь на обработку.
             foreach (var item in CheckNewItems())
             {
@@ -95,7 +93,7 @@ namespace TinyOPDSCore.Misc
             }
             else
             {
-                _logger.LogInformation("Нет новых поступлений.");
+                _logger.LogTrace("Нет новых поступлений.");
             }
         }
 
@@ -127,14 +125,14 @@ namespace TinyOPDSCore.Misc
             }
             else
             {
-                _logger.LogInformation($"Отсутствует файл {path2}. Обновление библиотеки невозможно.");
+                _logger.LogWarning($"Отсутствует файл {path2}. Обновление библиотеки невозможно.");
             }
             return rt;
         }
 
         public Task StopAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Timed Hosted Service is stopping.");
+            _logger.LogTrace("Timed Hosted Service is stopping.");
 
             _timer?.Change(Timeout.Infinite, 0);
 
@@ -144,12 +142,6 @@ namespace TinyOPDSCore.Misc
         public void Dispose()
         {
             _timer?.Dispose();
-        }
-        public void Fsw_Created(object sender, FileSystemEventArgs e)
-        {
-            ZipQueues.Enqueue(new(e.Name, e.FullPath));
-
-            _logger.LogInformation("Watcher2 - " + e.Name + "; " + e.FullPath);
         }
     }
 }

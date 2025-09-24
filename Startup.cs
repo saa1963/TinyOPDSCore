@@ -32,7 +32,7 @@ namespace TinyOPDSCore
 
             var loggerFactory = new NLogLoggerFactory();
             logger = loggerFactory.CreateLogger<Startup>();
-            logger.LogInformation("Startup исполнен.");
+            logger.LogTrace("Startup исполнен.");
         }
 
         public IConfiguration Configuration { get; }
@@ -51,16 +51,8 @@ namespace TinyOPDSCore
                                             .AllowAnyMethod();
                     });
             });
-            //services.AddSingleton(typeof(Watcher2));
             services.AddHostedService<Watcher2>();
         }
-
-        //private void Fsw_Created(object sender, FileSystemEventArgs e)
-        //{
-        //    //ZipQueues.Enqueue(new(e.Name, e.FullPath));
-        //    
-        //    logger.LogInformation("Watcher2 - " + e.Name + "; " + e.FullPath);
-        //}
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
