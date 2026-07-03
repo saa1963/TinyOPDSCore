@@ -77,7 +77,6 @@ namespace TinyOPDSCore.Misc
                         }
                         lib.EndTransaction();
                         lib.ResetCache();
-                        UpdateListOfFiles();
                         _logger.LogInformation($"{zipName} добавлено {insideNo} книг.");
                     }
                     catch (Exception ex)
@@ -93,6 +92,7 @@ namespace TinyOPDSCore.Misc
             }
             else
             {
+                UpdateListOfFiles();
                 _logger.LogTrace("Нет новых поступлений.");
             }
         }
