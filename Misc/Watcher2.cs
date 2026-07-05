@@ -23,6 +23,7 @@ namespace TinyOPDSCore.Misc
         //private int executionCount = 0;
         private readonly ILogger<Watcher2> _logger;
         private Timer? _timer = null;
+        private int _isWorking = 0;
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _env;
 
@@ -48,52 +49,66 @@ namespace TinyOPDSCore.Misc
 
         private void DoWork(object? state)
         {
-            _logger.LogTrace("DoWork работает");
-            // Есть новые zip файлы - добавляем в очередь на обработку.
-            foreach (var item in CheckNewItems())
+            // Если предыдущий запуск ещё выполняется, пропускаем этот.
+            if (System.Threading.Interlocked.Exchange(ref _isWorking, 1) == 1)
             {
-                ZipQueues.Enqueue(item);
+                _logger.LogTrace("DoWork пропускается — предыдущая обработка ещё не завершена.");
+                return;
             }
-            var lib = MyHomeLibrary.Instance;
-            var fb2Parser = new FB2Parser();
 
-            if (ZipQueues.Count > 0)
+            try
             {
-                if (ZipQueues.TryDequeue(out var item))
+                _logger.LogTrace("DoWork работает");
+                // Есть новые zip файлы - добавляем в очередь на обработку.
+                foreach (var item in CheckNewItems())
                 {
-                    (var zipName, var fullpath) = item;
-                    try
+                    ZipQueues.Enqueue(item);
+                }
+                var lib = MyHomeLibrary.Instance;
+                var fb2Parser = new FB2Parser();
+
+                if (ZipQueues.Count > 0)
+                {
+                    if (ZipQueues.TryDequeue(out var item))
                     {
-                        using ZipArchive zipArchive = ZipFile.OpenRead(fullpath);
-                        int insideNo = 0;
-                        lib.BeginTransaction();
-                        foreach (var entry in zipArchive.Entries)
+                        (var zipName, var fullpath) = item;
+                        try
                         {
-                            var memStream = new MemoryStream();
-                            entry.Open().CopyTo(memStream);
-                            var book = fb2Parser.Parse(memStream, zipName + "@" + entry.Name);
-                            lib.Add2(book, insideNo);
-                            insideNo++;
+                            using ZipArchive zipArchive = ZipFile.OpenRead(fullpath);
+                            int insideNo = 0;
+                            lib.BeginTransaction();
+                            foreach (var entry in zipArchive.Entries)
+                            {
+                                var memStream = new MemoryStream();
+                                entry.Open().CopyTo(memStream);
+                                var book = fb2Parser.Parse(memStream, zipName + "@" + entry.Name);
+                                lib.Add2(book, insideNo);
+                                insideNo++;
+                            }
+                            lib.EndTransaction();
+                            lib.ResetCache();
+                            _logger.LogInformation($"{zipName} добавлено {insideNo} книг.");
                         }
-                        lib.EndTransaction();
-                        lib.ResetCache();
-                        _logger.LogInformation($"{zipName} добавлено {insideNo} книг.");
-                    }
-                    catch (Exception ex)
-                    {
-                        // содержимое файла не удалось добавить в библиотеку
-                        // запихиваем пасту в тюбик
-                        lib.RollbackTransaction();
-                        lib.ResetCache();
-                        ZipQueues.Enqueue(item);
-                        _logger.LogError(ex, $"{zipName} не удалось обработать.");
+                        catch (Exception ex)
+                        {
+                            // содержимое файла не удалось добавить в библиотеку
+                            // запихиваем пасту в тюбик
+                            lib.RollbackTransaction();
+                            lib.ResetCache();
+                            ZipQueues.Enqueue(item);
+                            _logger.LogError(ex, $"{zipName} не удалось обработать.");
+                        }
                     }
                 }
+                else
+                {
+                    UpdateListOfFiles();
+                    _logger.LogTrace("Нет новых поступлений.");
+                }
             }
-            else
+            finally
             {
-                UpdateListOfFiles();
-                _logger.LogTrace("Нет новых поступлений.");
+                System.Threading.Interlocked.Exchange(ref _isWorking, 0);
             }
         }
 
@@ -120,6 +135,7 @@ namespace TinyOPDSCore.Misc
                 var saveFiles = File.ReadAllLines(path2);
                 foreach(var item in curFiles.Except(saveFiles))
                 {
+                    // добавляем только новые файлы, которых нет в сохраненном списке (listf.txt)
                     rt.Add((item, Path.Combine(path, item)));
                 }
             }
